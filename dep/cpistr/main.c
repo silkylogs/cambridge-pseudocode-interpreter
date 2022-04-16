@@ -9,31 +9,36 @@ const char *copypasta3 = "You committed the ultimate cardinal sin, you got perso
 const char *copypasta4 = "Then we'll all fall together. 3 seasons of Support have hardened me against this. Too often has Soldier complained about me not healing when I was trying to fend off a Winston alone. Too often has Genji tried to YOLO SOLO the enemy team then complained about healing. Too often have I been alone on the objective while my teammates rush after an enemy flank like a terrier after a tennis ball. Too often have we watched our tank provide advancing cover, only to watch our teammates run beyond the safety of the shields and be cut down by the enemy team's focused fire. A support doesn't start spiteful. We start wanting to help, wanting to help our team obtain victory. We try to corral our teammate's base impulses, their desires for glory rather than victory. More often than not we fail, over and over again. Slowly but surely we stop being willing to tolerate this maddening behavior. We stop caring about our teammates. It's not fun anymore, its work. We get fed up. We've been trying to keep them alive, game after game, season after season. Now? We're done. They will look upon us while at critical health. They will ask us over voice what we're doing. They will say to report us in all chat. They will huddle around health packs with some small semblance of hope. And how will we respond? \"Need Healing.\"";
 
 
-#define LINEBREAK printf("\n------------------------------------------------------------------------------\n\n");
+#define LINEBREAK printf("\n------------------------------------------------------------------------------\n");
 
 // Testing macroes
-#define TEST_INIT	1
-#define TEST_CONCAT	1
-#define TEST_STRESS	1
-#define TEST_RIGHT	1
+#define TEST_INIT	0
+#define TEST_CONCAT	0
+#define TEST_STRESS	0
+#define TEST_RIGHT	0
+#define TEST_MID	0
+#define TEST_LCASE	1
+#define TEST_UCASE	1
 
 int main(){
 
 	if(TEST_INIT)
 	{
+		LINEBREAK
+		printf("beginning initialization test...\n");
 		CpiString *helloWorldStr = NULL;
 
 		printf("initializing string...\n");
-		initNewStringObj(&helloWorldStr, "Hello world\n");
+		initNewStringObj(&helloWorldStr, "Hello world");
 
 		printf("String length, excluding null terminator is %llu\n", helloWorldStr->length);
-		printf("and the string is %s\n", helloWorldStr->contents);
+		printf("and the string is \"%s\"\n", helloWorldStr->contents);
 	}
 
-	LINEBREAK
 
 	if(TEST_CONCAT)
 	{
+		LINEBREAK
 		printf("begining concatenation test...\n");
 
 		CpiString *cp1 = NULL;
@@ -51,14 +56,14 @@ int main(){
 		appendStringObjs(&cp1, cp3);
 		appendStringObjs(&cp1, cp4);
 	
-		printf("new string length: %d\n", getLength(cp1));
+		printf("new string length: %d\n", getStringLength(cp1));
 		printf("concatenated string: %s\n", getString(cp1));
 	}
 
-	LINEBREAK
 
 	if(TEST_STRESS)
 	{
+		LINEBREAK
 		printf("beginning appendStringObjs() stress test...\n");
 
 		CpiString *acc = NULL;
@@ -70,26 +75,70 @@ int main(){
 
 		do{
 			printf("iteration %llu\n", count);
-			printf("accumulator string length: %llu\n", getLength(acc));
+			printf("accumulator string length: %llu\n", getStringLength(acc));
 			printf("concatenated string: \"%s\"\n", getString(acc));
 			appendStringObjs(&acc, cp4);
 			count++;
 		} while(count < 10);
 	}
 
-	LINEBREAK
 
 	if(TEST_RIGHT)
 	{
-		printf("beginning testing of right()...\n");
+		LINEBREAK
+		printf("Beginning testing of right()...\n");
 
-		size_t l = 5;
-		CpiString *str = NULL; initNewStringObj(&str, "ooga booga");
+		size_t l = 0;
+		CpiString *str = NULL; initNewStringObj(&str, "hello world");
 		CpiString *modded = NULL;
 
 		modded = right(str, l);
-		printf("%d rightmost characters from \"%s\" is \"%s\"\n", l, getString(str), getString(modded));			}
+		printf("%llu rightmost character(s) from \"%s\" is \"%s\"\n", l, getString(str), getString(modded));
+	}
 
+
+	if(TEST_MID)
+	{
+		LINEBREAK
+		printf("Beginning testing of mid()...\n");
+
+		size_t x = 5;
+	 	size_t y = 1;
+		
+		CpiString *str = NULL; initNewStringObj(&str, "ABCDEF");
+		CpiString *out = NULL;
+
+
+		// Returns string of length y starting at position x from ThisString
+		out = mid(str, x, y);
+		printf("%llu character(s) from position %llu from string \"%s\" is \"%s\"\n",\
+		                                                                        y, x,\
+		                                              getString(str), getString(out));
+	}
+
+	if(TEST_UCASE)
+	{
+		LINEBREAK
+		printf("Beginning test of ucase()...\n");
+
+		char s = 'a';
+		char o;
+
+		o = ucase(s);
+		printf("The uppercase character of \'%c\' is \'%c\'\n", s, o);
+	}
+
+	if(TEST_LCASE)
+	{
+		LINEBREAK
+		printf("Beginning test of ucase()...\n");
+
+		char s = 'A';
+		char o;
+
+		o = lcase(s);
+		printf("The lowercase character of \'%c\' is \'%c\'\n", s, o);
+	}
 
 	return 0;
 }

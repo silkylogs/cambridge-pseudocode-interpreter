@@ -13,7 +13,7 @@ char* getString(const CpiString *cs){
 	else { return cs->contents; }
 }
 
-size_t getLength(const CpiString *cs){
+size_t getStringLength(const CpiString *cs){
 	return cs->length;
 }
 
@@ -115,6 +115,9 @@ void appendStringObjs(CpiString **original, const CpiString *cs){
 	return;
 }
 
+// Assumes that the return value of the function is a pointer pointing to null
+// if not, do not forget to delete the string object's data beforehand
+// Returns rightmost x characters from ThisString
 CpiString* right(const CpiString *ThisString, size_t x){
 	CpiString *str = NULL;
 
@@ -142,3 +145,39 @@ CpiString* right(const CpiString *ThisString, size_t x){
 	}
 }
 
+// Returns string of length y starting at position x from ThisString
+CpiString* mid(const CpiString *ThisString, const size_t x, const size_t y){
+	CpiString *str = NULL;
+
+	#define RETURN_NULL initNewStringObj(&str, ""); return str;
+	if(x <= 0 || x > ThisString->length || y <= 0) { printf("pt\n"); RETURN_NULL }
+
+	size_t maxY = (ThisString->length) - x + 1;
+	size_t effectiveY = 0;
+	char *midChars = NULL;
+	
+	if(y >= maxY) { effectiveY = maxY; }
+	else { effectiveY = y; }
+	
+	midChars = malloc(effectiveY + 1);
+	if(midChars == NULL) {
+		printf("cpistr.c/mid(): unable to allocate memory for offset (%llu) characters\n", y);
+		RETURN_NULL
+	}
+
+	memcpy(midChars, ThisString->contents + x - 1, effectiveY);
+	initNewStringObj(&str, midChars);
+	return str;
+}
+
+char ucase(const char c){
+	char out = c;
+	if(out >= 'a' && out <= 'z') { out -= 32; }
+	return out;
+}
+
+char lcase(const char c){
+	char out = c;
+	if(out >= 'A' && out <= 'Z') { out += 32; }
+	return out;
+}
