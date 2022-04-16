@@ -1,4 +1,4 @@
-# Cambridge pseudocode interpreter reference manual, version 0.0.1
+# Cambridge pseudocode language specification, version 0.0.1
 
 ## Indentation
 ---
@@ -388,59 +388,42 @@ expression is generally evaluated left to right.
 
 ## String operations
 ---
-The compiler shall provide these builtin functions (and one operator) for basic string manipulation. However, it should be noted that they can be replicated in pseudocode pretty easiliy:
+The specification shall provide these builtin functions (and one operator) for
+basic string manipulation.
 ```
 // RIGHT(ThisString : STRING, x : INTEGER) RETURNS STRING
 // Returns rightmost x characters from ThisString
 RIGHT("ABCDEFGH", 3) //returns "FGH"
-
-FUNCTION RIGHT(ThisString : STRING, x : INTEGER) RETURNS STRING
-	DECLARE strLen : INTEGER
-	strLen <- LENGTH(ThisString)
-
-	IF x <= 0
-		THEN
-		RETURN ""
-	ELSEIF x >= strLen
-		RETURN ThisString
-	ENDIF
-
-	DEFINE rightMostChars : ARRAY[1:x] OF STRING	
-	DEFINE thisStrIndex : INTEGER
-	DEFINE subStrIndex : INTEGER
-
-	subStrIndex <- 1
-	FOR thisStrIndex <- 1 TO strLen
-		IF thisStrIndex >= x
-			THEN
-			rightMostChars[subStrIndex] <- ThisString[thisStrIndex]
-		ENDIF
-	NEXT thisStrIndex
-	RETURN rightMostChars
-ENDFUNCTION
 ```
+
 ```
 // LENGTH(ThisString : STRING) RETURNS INTEGER
 // Returns the integer value representing the length of ThisString
 LENGTH("Happy Days") //returns 10 
 ```
+
 ```
 // MID(ThisString : STRING, x : INTEGER, y : INTEGER) RETURNS STRING
 // Returns string of length y starting at position x from ThisString
 MID("ABCDEFGH", 2, 3) //returns "BCD"
 ```
+
 ```
 // LCASE(ThisChar : CHAR) RETURNS CHAR
-// Returns the character value representing the lower case equivalent of ThisChar.
-// If ThisChar is not an upper-case alphabetic character, it is returned unchanged.
+// Returns the character value representing the lower case equivalent of
+// ThisChar. If ThisChar is not an upper-case alphabetic character, it is
+// returned unchanged.
 LCASE('W') //returns 'w'
 ```
+
 ```
 // UCASE(ThisChar : CHAR) RETURNS CHAR
-// Returns the character value representing the upper case equivalent of ThisChar
-// if ThisChar is not a lower case alphabetic character, it is returned unchanged.
+// Returns the character value representing the upper case equivalent of 
+// ThisChar if ThisChar is not a lower case alphabetic character, it is
+// returned unchanged.
 UCASE('h') //returns 'H'
 ```
+
 The operator for concatenation is `&`. An example of valid usage:
 ```
  OUTPUT "Summer" & " " & "Pudding" //outputs "Summer Pudding"
