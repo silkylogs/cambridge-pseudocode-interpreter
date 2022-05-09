@@ -1,11 +1,14 @@
-# Cambridge pseudocode language specification, version 0.0.1
+# Cambridge pseudocode language specification, v0.0.1
+
 
 ## Indentation
 ---
-Lines are indented by three spaces to indicate that they are contained within a
-statement in a previous line. Continuation lines are indented by two spaces.
+Lines are indented by three spaces to indicate that they are contained within
+a statement in a previous line. Continuation lines are always indented by two
+spaces.
 
-An example demonstrating correct indentation:
+An example demonstrating correct indentation (to be updated for a) clarity
+b) correctness):
 ```
 FUNCTION trapeziumArea(paralellSide1:REAL, parallelSide2:REAL,
   height:REAL) RETURNS REAL
@@ -16,7 +19,8 @@ FUNCTION trapeziumArea(paralellSide1:REAL, parallelSide2:REAL,
    // declaration)
    IF parallelSide1 < 0 THEN
 
-      // beginning of output statement (indentation is 3 spaces from IF clause)
+      // beginning of output statement
+      // (indentation is 3 spaces from IF clause)
       OUTPUT "parallel side 1 cannot be negative"
       RETURN 0
 
@@ -43,9 +47,6 @@ FUNCTION trapeziumArea(paralellSide1:REAL, parallelSide2:REAL,
    
 ENDFUNCTION
 ```
-This sample only demonstrates indendation for the general case. Additional
-syntactic sugar for IF statements are in the relevant section of this document.
-
 
 
 
@@ -143,13 +144,14 @@ corresponding literals are as follows:
 
 ## Identifiers
 ---
-Identifiers (the names given to variables, constants, procedures and functions)
-are in mix case. They can only contain letters `A–Z, a–z`, digits `0–9` and the
-underscore character `_`. They may not start with a digit.
+Identifiers (the names given to variables, constants, procedures and
+functions) are in mix case. They can only contain letters `A-Z, a-z`, digits
+`0-9` and the underscore character `_`. They may not start with a digit.
 
 Keywords listed in the "Reserved keywords and operators" section of the
 documentation may not be used as variables. Identifiers are case insensitive,
-for example, `Countdown` and `CountDown` may not be used as separate variables.
+for example, `Countdown` and `CountDown` may not be used as separate
+variables.
 
 
 
@@ -162,9 +164,10 @@ in the following format:
 <identifier> <- <value>
 ```
 
-The identifier must refer to a variable (this can be an individual element in a
-data structure such as an array or an abstract data type). The value may be any
-expression that evaluates to a value of the same data type as the variable.
+The identifier must refer to a variable (this can be an individual element in
+a data structure such as an array or an abstract data type). The value may be
+any expression that evaluates to a value of the same data type as the
+variable.
 
 Valid examples of assignments include:
 ```
@@ -212,7 +215,7 @@ SavedGame <- NoughtsAndCrosses
 Array elements can be individually accessed by using the following construct:
 ```
 StudentNames[1] <- "Ali"
-NoughtsAndCrosses[2,3] <- ꞌXꞌ
+NoughtsAndCrosses[2,3] <- 'X'
 StudentNames[n+1] <- StudentNames[n]
 ```
 
@@ -222,8 +225,8 @@ this explicit fashions are invalid:
 StudentNames[1 TO 30]: <- ""
 ```
 
-Instead, use an appropriate loop structure to assign the elements individually.
-For example:
+Instead, use an appropriate loop structure to assign the elements
+individually. For example:
 ```
 FOR Index <- 1 TO 30
    StudentNames[Index] <- ""
@@ -235,8 +238,8 @@ NEXT Index
 
 ## User defined datatypes
 ---
-The `TYPE` keyword can be overloaded to mean different things, depending on the
-context.
+The `TYPE` keyword can be overloaded to mean different things, depending on
+the context.
 
 When declared as an enumerated type, where the datatype can have a discrete
 list of possible values (the equivalent of `enum` in c):
@@ -360,7 +363,8 @@ make order of operations explicit.
 
 ## Relational operations
 ---
-The following symbols are used for relational operators (also known as comparison operators):
+The following symbols are used for relational operators (also known as
+comparison operators):
 - `>`	Greater than
 - `<`	Less than
 - `>=`	Greater than or equal to
@@ -379,9 +383,9 @@ expression is generally evaluated left to right.
 - `AND`	Logical and
 - `OR`	Logical or
 - `NOT`	Logical not
-The operands and results of these operations are always of data type `BOOLEAN`.
-Parentheses may be used to make order of operations explicit, as the boolean
-expression is generally evaluated left to right.
+The operands and results of these operations are always of data type
+`BOOLEAN`. Parentheses may be used to make order of operations explicit, as
+the boolean expression is generally evaluated left to right.
 
 
 
@@ -430,120 +434,144 @@ The operator for concatenation is `&`. An example of valid usage:
 ```
 
 
-
-
-## Selection statements (to be revamped)
+## Random number generation
 ---
+The following builtin functions are provided for pseudorandom random number
+generation:
+```
+RANDOMBETWEEN(min,max)	// generates a random integer between the integers min and max
+RND()			// generates a random real number between 0 and 1. 
+```
 
-### IF statements
+
+## IF statements
+---
 `IF` statements may or may not have an `ELSE` clause.
-`IF` statements without an else clause are written as follows:
+
+`IF` statements without an `ELSE` clause are as follows:
 ```
-IF
-	<condition>
-	THEN
-		<statement(s)>
-ENDIF
-```
-`IF` statements with an `ELSE` clause are written as follows:
-```
-IF <condition>
-	THEN
-	<statement(s)>
-ELSE
-	<statement(s)>
-ENDIF
+IF <condition>		// 0 spaces from base
+  THEN			// 2 spaces from base
+    <statements>	// 4 spaces from base
+ENDIF			// 0 spaces from base
 ```
 
-An example of nested `IF` statements:
+`IF` statements with an `ELSE` clause are as follows:
 ```
-IF ChallengerScore > ChampionScore
-	THEN
-	IF ChallengerScore > HighestScore
-		THEN
-		OUTPUT ChallengerName, " is champion and highest scorer"
-	ELSE
-		OUTPUT Player1Name, " is the new champion"
-	ENDIF
-ELSE
-	OUTPUT ChampionName, " is still the champion"
-	IF ChampionScore > HighestScore
-		THEN
-		OUTPUT ChampionName, " is also the highest scorer"
-	ENDIF
-ENDIF
+IF <condition>		// 0 spaces from base
+  THEN			// 2 spaces from base
+    <statements>	// 4 spaces from base
+  ELSE			// 2 spaces from base
+    <statements>	// 4 spaces from base
+ENDIF			// 0 spaces from base
+```
+Note that the `THEN` and `ELSE` clauses are only indented by two spaces. (They
+are, in a sense, a continuation of the `IF` statement rather than separate
+statements).
+
+When `IF` statements are nested, the nesting should continue the indentation
+of two spaces starting from the above `THEN` statement.
+
+An example of nested `IF` statements with the _recommended*_ usage of
+indentation:
+```
+IF challengerScore > championScore		// 0 spaces from base
+  THEN						//   2
+    IF challengerScore > highestScore		//     4
+      THEN					//       6
+        OUTPUT challengerName, " is champion"	//         8
+      ELSE					//       6
+        OUTPUT player1Name, " is new champ"	//         8
+    ENDIF					//     4
+  ELSE						//   2
+    OUTPUT championName, " is still the champ"	//     4
+    IF championScore > HighestScore		//     4
+      THEN					//       6
+        OUTPUT championName, " is also highest"	//         8
+    ENDIF					//     4
+ENDIF						// 0
 ```
 
-### CASE statements
-`CASE` statements allow one out of several branches of code to be executed, depending on the value of a variable.  
-`CASE` statements are written as follows:
-```
-// Blank line(s) after each value are optional, and in this section
-// are present for readabliliy only
-// Also, yes, having the statements in a new line after the <values>
-// will be enforced as I dont want to deal with indentation ambiguities
+While the indentation style is recommended for purposes of easier reading,
+this wont be enforced as the specification will consider the next lines
+indented with two spaces as continuation lines. They will be
+appended to the previous lines before any further processing.
 
+Thus, enforcing the rule would result in the lines being interpreted as
+follows:
+```
+IF challengerScore > championScore THEN			// 0 spaces from base
+    IF challengerScore > highestScore THEN		//     4
+        OUTPUT challengerName, " is champion" ELSE	//         8
+        OUTPUT player1Name, " is new champ"		//         8
+    ENDIF ELSE						//     4 
+    OUTPUT championName, " is still the champ"		//     4
+    IF championScore > HighestScore THEN		//     4
+        OUTPUT championName, " is also highest"		//         8
+    ENDIF						//     4
+ENDIF							// 0
+```                                                     
+Henceforth, the "Lines are indented by four spaces to indicate that they are
+contained within a statement in a previous line" rule holds for IF statements.
+                                                        
+                                                        
+
+
+
+## CASE statements
+`CASE` statements allow one out of several brances of code to be executed,
+depending on the value of a variable. An `OTHERWISE` clause can be the last
+case, which is executed only when none of the preceding cases apply.
+
+`CASE` statements are as follows:
+```
 CASE OF <identifier>
-	<value 1> :
-		<statement1>
-		<statement2>
-		...
-
-	<value 2> :
-		<statement1>
-		<statement2>
-		...
-		...
+  <value 1> : <statement>
+  <value 2> : <statement>
+  <value n> : <statement>
 ENDCASE
 ```
-An OTHERWISE clause can be the last case:
-```
-CASE OF <identifier>
-	<value 1> :
-		<statement1>
-		<statement2>
-		...
+Each case clause is indented by two spaces, as they are seen as the
+continuation of the `CASE` statement rather than new statements.
 
-	<value 2> :
-		<statement1>
-		<statement2>
-		...
+As a result, the branches of code to be executed will only contain single
+statements.
 
-	OTHERWISE :
-		<statement1>
-		<statement2>
-		...
-ENDCASE
+The case clauses are tested in sequence. When a case that applies is found,
+its statement is executed and the `CASE` statement is complete. Control is
+passed to the statement after the `ENDCASE`. Any remaining cases are not
+tested. If present, an `OTHERWISE` clause must be the last case. Its statement
+will be executed if none of the preceding cases apply.
+
+An example of a validly formatted CASE statement:
 ```
-Each value (assuming its an integer or a character being tested) may be represented by a range, for example:
-```
-// See how neat this is?
-<value1> TO <value2> :
-	<statement1>
-	<statement2>
-	...
-```
-Note that the case clauses are tested in sequence. When a case that applies is found, its statement is executed and the CASE statement is complete. Control is passed to the statement after the ENDCASE. Any remaining cases are not tested.  
-If present, an `OTHERWISE` clause must be the last case. Its statement will be executed if none of the preceding cases apply.
-An example of case statements in action:
-```
-INPUT Move
-CASE OF Move
-	ꞌWꞌ : 	Position <- Position − 10
-	ꞌSꞌ : 	Position <- Position + 10
-	ꞌAꞌ : 	Position <- Position − 1
-	ꞌDꞌ : 	Position <- Position + 1
-	OTHERWISE : 	CALL Beep
+INPUT move
+CASE OF move
+  'w': position <- position + 10
+  's': position <- position - 10
+  'a': position <- position + 1
+  'd': position <- position - 1
+  OTHERWISE: beep
 ENDCASE
 ```
 
+For the implementor, the following statements would get transformed into the
+following:
+```
+INPUT move
+CASE OF move 'w': position <- position + 10 's': position <- position - 10 'a': position <- position + 1 'd': position <- position - 1 OTHERWISE: beep
+ENDCASE
+```
+Each statement will be delimited by the letter of a new case, which in turn is
+determined by the colon character.
 
 
 
-## Iterators
+
+
+
+## FOR loops (to be revamped)
 ---
-
-### FOR loops
 The syntax of this loop is as follows:
 ```
 FOR <identifier> <- <value1> TO <value2> // STEP will default to 1 in this case
