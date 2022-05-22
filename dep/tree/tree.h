@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Todo: make support for parent
 typedef struct TreeNode{
 	void *data;
 
@@ -24,6 +25,6 @@ typedef struct TreeNode{
 TreeNode* makeNodeWithChildren(size_t mChildCount);
 void addChildToNode(TreeNode *parent, const TreeNode *child);
 void* getChildData(const TreeNode *node, size_t childIndex);
-void printTree(const TreeNode *root, void (*printFunc)(void));
+
 
 #endif
