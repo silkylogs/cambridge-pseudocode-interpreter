@@ -1,0 +1,11 @@
+cmake_minimum_required( VERSION "3.10.0" )
+project( "cambridge-pseudocode-interpreter" C )
+
+# cpi string library
+include_directories( ${CMAKE_SOURCE_DIR}/src/cpistr )
+add_library( cpistr STATIC ${CMAKE_SOURCE_DIR}/src/cpistr )
+set_target_properties( cpistr PROPERTIES LINKER_LANGUAGE C )
+
+add_executable( ${PROJECT_NAME} src/cpi/main.c )
+target_link_libraries( ${PROJECT_NAME} cpistr )
+
