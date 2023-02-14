@@ -4,9 +4,9 @@ cmake_minimum_required( VERSION "3.10.0" )
 project( "cambridge-pseudocode-interpreter" C )
 
 # cpi string library
-include_directories( ${CMAKE_SOURCE_DIR}/src/cpistr )
-add_library( cpistr STATIC ${CMAKE_SOURCE_DIR}/src/cpistr/cpistr.c )
-set_target_properties( cpistr PROPERTIES LINKER_LANGUAGE C )
+include_directories( ${CMAKE_SOURCE_DIR}/src/cpi_string )
+add_library( cpi_string STATIC ${CMAKE_SOURCE_DIR}/src/cpi_string/cpi_string.c )
+set_target_properties( cpi_string PROPERTIES LINKER_LANGUAGE C )
 
 # exe environment
 include_directories( ${CMAKE_SOURCE_DIR}/src/cpi_iee )
@@ -14,4 +14,4 @@ add_library( cpi_iee STATIC ${CMAKE_SOURCE_DIR}/src/cpi_iee/cpi_iee.c )
 set_target_properties( cpi_iee PROPERTIES LINKER_LANGUAGE C )
 
 add_executable( ${PROJECT_NAME} src/cpi/main.c )
-target_link_libraries( ${PROJECT_NAME} cpistr cpi_iee )
+target_link_libraries( ${PROJECT_NAME} cpi_string cpi_iee )
