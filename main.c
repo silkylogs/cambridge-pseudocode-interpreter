@@ -9,16 +9,21 @@ typedef signed long long int ssize;
 #include "CpAsciiStringView.c"
 
 
-
-//
+bool cp_test_internal_atomic_type_sizes(void);
+bool cp_test_internal_atomic_type_sizes(void) {
+  return sizeof (ssize) == 8;
+}
 
 bool cp_run_all_tests(void);
 bool cp_run_all_tests(void) {
   bool all_ok = true;
   bool current_ok = true;
 
-  //current_ok &= cp_test_internal_atomic_type_sizes();
-  //all_ok &= current_ok;
+  current_ok &= cp_test_internal_atomic_type_sizes();
+  all_ok &= current_ok;
+
+  current_ok &= cp_test_CpAsciiStringView_from_const_cstr();
+  all_ok &= current_ok;
   
   current_ok &= cp_test_case_sensitive_word_match(); // insert function here
   all_ok &= current_ok;
