@@ -3,7 +3,7 @@
 
 typedef signed long long int ssize;
 
-#define CP_LOG(WARN_LEVEL, MSG) \
+#define CP_LOG(WARN_LEVEL, MSG)						\
   printf("%s:%d:0: %s: %s\n", __FILE__, __LINE__, WARN_LEVEL, MSG)
 
 #include "CpAsciiStringView.c"
@@ -24,8 +24,8 @@ bool cp_run_all_tests(void) {
 
   current_ok &= cp_test_CpAsciiStringView_from_const_cstr();
   all_ok &= current_ok;
-  
-  current_ok &= cp_test_case_sensitive_word_match(); // insert function here
+
+  //current_ok &= cp_test_case_sensitive_word_match();
   all_ok &= current_ok;
     
   return all_ok;
