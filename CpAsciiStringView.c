@@ -120,7 +120,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
     return true;
 }
 
-#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(...)		\
+#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(...)	\
     CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked( \
 	(struct CpAsciiStringView_StringSubstringPair) {		\
 	    __VA_ARGS__							\
@@ -142,7 +142,7 @@ cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(voi
     all_ok &= CP_ASSERT(
         CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(
 	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER"),
-	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64")
+	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"))
 	);
 
     return all_ok;
