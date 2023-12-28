@@ -3,3 +3,9 @@ cpi
 
 # Thanks, emacs
 *~
+
+# Build files
+*.sln
+*.vcxproj
+bin
+obj

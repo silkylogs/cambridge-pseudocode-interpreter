@@ -24,7 +24,7 @@ bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str);
 
 bool
 CpAsciiStringView_from_const_cstr_check(const char *cstr, ssize cstr_len) {
-    if (cstr == nullptr) return false;
+    if (cstr == NULL) return false;
     if (cstr_len < 0) return false;
     return true;
 }
@@ -44,13 +44,13 @@ bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str) {
 bool cp_test_CpAsciiStringView_from_const_cstr(void);
 bool cp_test_CpAsciiStringView_from_const_cstr(void) {
     // Test the macro checks for obvious defects  
-    CP_ASSERT(false == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(nullptr));
+    CP_ASSERT(false == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(NULL));
     CP_ASSERT(true == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(""));
 
     struct CpAsciiStringView test;
     test = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("This string has 25 chars");
     CP_ASSERT(test.len_including_nul == 25);
-    CP_ASSERT(test.chars != nullptr);
+    CP_ASSERT(test.chars != NULL);
   
     return true;
 }
