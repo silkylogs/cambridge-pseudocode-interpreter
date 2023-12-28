@@ -93,6 +93,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
     struct CpAsciiStringView string,
     struct CpAsciiStringView substring)
 {
+    if (substring.len_including_nul > string.len_including_nul) return false;
     for (ssize str_i = 0; str_i < string.len_including_nul; ++str_i) {
 	if (string.chars[str_i] == substring.chars[0]) {
 	    for (ssize sub_i = 0;
@@ -110,6 +111,16 @@ bool
 cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void);
 bool
 cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void) {
+    printf("entered match case sens\n");
+    bool all_ok = true;
+ 
+    all_ok &= CP_ASSERT(
+	CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
+	    CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"),
+	    CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER")));
+
+    //CP_LOG("TEST", "TEST");
+
     /*
       bool cp_test_case_sensitive_word_match(void);
       bool cp_test_case_sensitive_word_match(void) {
@@ -141,7 +152,7 @@ cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(voi
       return all_ok;
       }
     */
-    return false;
+    return all_ok;
 }
 
 #endif

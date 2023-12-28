@@ -10,10 +10,15 @@ typedef signed long long int ssize;
     printf("%s:%d:1: Warning: " PRINTF_FMT_STR "\n",	\
 	   __FILE__, __LINE__, __VA_ARGS__);
 
-#define CP_ASSERT(EXPR)					\
-    if(!((EXPR))) {					\
-	CP_REPORT("Assertion failed: \"%s\"\n", #EXPR);	\
-    }
+bool cp_assert_internal(bool b, const char *b_expression, const char *file, int line);
+bool cp_assert_internal(bool b, const char *b_expression, const char *file, int line) {
+    if (!b)
+	printf("%s:%d:1: Assertion failure: %s\n",
+	       file, line, b_expression);
+    return b;
+}
+
+#define CP_ASSERT(EXPR) cp_assert_internal((EXPR), #EXPR, __FILE__, __LINE__)
 
 #define CP_ASSERT_SET(EXPR, BOOL)		\
     CP_ASSERT(EXPR);				\
@@ -30,17 +35,10 @@ bool cp_test_internal_atomic_type_sizes(void) {
 bool cp_run_all_tests(void);
 bool cp_run_all_tests(void) {
     bool all_ok = true;
-    bool current_ok = true;
-
-    CP_ASSERT_SET(cp_test_internal_atomic_type_sizes(), current_ok);
-    all_ok &= current_ok;
-
-    CP_ASSERT_SET(cp_test_CpAsciiStringView_from_const_cstr(), current_ok);
-    all_ok &= current_ok;
-
-    CP_ASSERT_SET(
-	cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(), current_ok);
-    all_ok &= current_ok;
+    
+    all_ok &= CP_ASSERT(cp_test_internal_atomic_type_sizes());
+    all_ok &= CP_ASSERT(cp_test_CpAsciiStringView_from_const_cstr());
+    all_ok &= CP_ASSERT(cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked());
     
     return all_ok;
 }
