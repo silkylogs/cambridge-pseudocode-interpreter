@@ -9,28 +9,28 @@ project "CambridgePseudocodeInterpreter"
    targetdir "bin/%{cfg.buildcfg}"
    files { "main.c" }
 
+-- TODO: make the compilers heed these warnings
+--       backported from the old build script
+--   "-Wwrite-strings"
+--   "-Wstrict-prototypes"
+--   "-Wmissing-prototypes"
+--   "-Wmissing-declarations"
+--   "-Wsign-compare"
+--   "-Wlogical-op"
+--   "-Wtype-limits"
+--   "-Wsuggest-attribute=pure"
+--   "-Wsuggest-attribute=const"
+--   "-Wsuggest-attribute=noreturn"
+--   "-Wsuggest-attribute=format"
+--   "-Wformat-nonliteral"
+--   "-fdiagnostics-color=never"
+--   "-Werror=vla"
+
 filter "configurations:All"
    defines { "" }
    symbols "On"
    architecture "X86_64"
    warnings "Everything"
-
-   -- Named warnings are applicable for non-msvc compilers
-   --fatalwarnings { "-Wwrite-strings" }
-   --   "-Wstrict-prototypes"
-   --   "-Wmissing-prototypes"
-   --   "-Wmissing-declarations"
-   --   "-Wsign-compare"
-   --   "-Wlogical-op"
-   --   "-Wtype-limits"
-   --   "-Wsuggest-attribute=pure"
-   --   "-Wsuggest-attribute=const"
-   --   "-Wsuggest-attribute=noreturn"
-   --   "-Wsuggest-attribute=format"
-   --   "-Wformat-nonliteral"
-   --   "-fdiagnostics-color=never"
-   --   "-Werror=vla"
-   --}
 
 newaction {
    trigger     = "clean-build",
