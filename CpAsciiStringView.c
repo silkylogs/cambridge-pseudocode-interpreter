@@ -84,15 +84,23 @@ CpAsciiStringView_substring_check(struct CpAsciiStringView string, ssize idx1, s
     return true;
 }
 
+
+
+struct CpAsciiStringView_StringSubstringPair {
+    struct CpAsciiStringView string;
+    struct CpAsciiStringView substring;
+};
+
 bool CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
-    struct CpAsciiStringView string,
-    struct CpAsciiStringView substring);
+    struct CpAsciiStringView_StringSubstringPair);
 
 bool
 CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
-    struct CpAsciiStringView string,
-    struct CpAsciiStringView substring)
+    struct CpAsciiStringView_StringSubstringPair pair)
 {
+    struct CpAsciiStringView string = pair.string;
+    struct CpAsciiStringView substring = pair.substring;
+    
     if (substring.len_including_nul > string.len_including_nul) return false;
     for (ssize str_i = 0; str_i < string.len_including_nul; ++str_i) {
 	if (string.chars[str_i] == substring.chars[0]) {
@@ -100,58 +108,43 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
 		 sub_i < substring.len_including_nul && sub_i < substring.len_including_nul;
 		 ++sub_i)
 	    {
-		if (string.chars[str_i + sub_i] != substring.chars[sub_i]) return false;
+		char str_char = string.chars[str_i + sub_i];
+		char sub_char = substring.chars[sub_i];
+		
+		printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
+		if (sub_char == '\0') return true;
+		if (str_char != sub_char) return false;
 	    }
 	}
     }
     return true;
 }
 
+#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(...)		\
+    CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked( \
+	(struct CpAsciiStringView_StringSubstringPair) {		\
+	    __VA_ARGS__							\
+	})
+
 bool
 cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void);
 bool
 cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void) {
-    printf("entered match case sens\n");
     bool all_ok = true;
- 
+
+    // Tests for intended usage
     all_ok &= CP_ASSERT(
-	CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
-	    CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"),
-	    CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER")));
+        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(
+	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("DECLARE TestVar: BOOL"),
+	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("BOOL"))
+	);
 
-    //CP_LOG("TEST", "TEST");
+    all_ok &= CP_ASSERT(
+        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(
+	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER"),
+	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64")
+	);
 
-    /*
-      bool cp_test_case_sensitive_word_match(void);
-      bool cp_test_case_sensitive_word_match(void) {
-      bool all_ok = true;
-      typedef struct CpAsciiStringView T;
-
-      #define CP_TEST_FUNCTION(RETURN_WHAT, FUNC_NAME, ...)		\
-      do {								\
-      bool curr_ok = (RETURN_WHAT) == (FUNC_NAME)(__VA_ARGS__);	\
-      if (!curr_ok) {						\
-      CP_REPORT("function %s(%s) failed "			\
-      "(should return %s, returned %s)\n",		\
-      #FUNC_NAME, #__VA_ARGS__,			\
-      (RETURN_WHAT)? "true": "false",			\
-      (curr_ok)? "true": "false");			\
-      }								\
-      all_ok &= curr_ok;						\
-      } while(false);
-
-    
-      auto src1 = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR("INTEGER64");
-      auto type_name1 = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR("INTEGER");
-      CP_TEST_FUNCTION(false, cp_case_sensitive_word_match, src1, 0, type_name1);
-  
-      auto src2 = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR("DECLARE Test: BOOL");
-      auto type_name2 = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR("BOOL");
-      CP_TEST_FUNCTION(true, cp_case_sensitive_word_match, src2, 14, type_name2);
-
-      return all_ok;
-      }
-    */
     return all_ok;
 }
 

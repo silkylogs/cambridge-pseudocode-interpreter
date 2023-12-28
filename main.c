@@ -13,7 +13,10 @@ typedef signed long long int ssize;
 bool cp_assert_internal(bool b, const char *b_expression, const char *file, int line);
 bool cp_assert_internal(bool b, const char *b_expression, const char *file, int line) {
     if (!b)
-	printf("%s:%d:1: Assertion failure: %s\n",
+	printf("%s:%d:1: Assertion failure:\n"
+	       "---------- Expression starts here: ----------\n"
+	       "%s\n"
+	       "---------- Expression ends here.   ----------\n",
 	       file, line, b_expression);
     return b;
 }
