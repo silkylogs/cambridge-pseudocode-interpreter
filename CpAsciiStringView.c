@@ -111,7 +111,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
 		char str_char = string.chars[str_i + sub_i];
 		char sub_char = substring.chars[sub_i];
 		
-		printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
+		//printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
 		if (sub_char == '\0') return true;
 		if (str_char != sub_char) return false;
 	    }
@@ -120,7 +120,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
     return true;
 }
 
-#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(...)	\
+#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(...)	\
     CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked( \
 	(struct CpAsciiStringView_StringSubstringPair) {		\
 	    __VA_ARGS__							\
@@ -134,15 +134,24 @@ cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(voi
 
     // Tests for intended usage
     all_ok &= CP_ASSERT(
-        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(
+        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
 	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("DECLARE TestVar: BOOL"),
 	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("BOOL"))
 	);
 
     all_ok &= CP_ASSERT(
-        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR(
+        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
 	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER"),
 	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"))
+	);
+
+    // Improper usage: substring longer than original string
+    all_ok &= CP_ASSERT(
+        !CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
+	    .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
+		"Obviously long test string"),
+	    .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
+		"Obviously longer test string"))
 	);
 
     return all_ok;
