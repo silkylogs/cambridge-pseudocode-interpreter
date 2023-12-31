@@ -1,3 +1,5 @@
+#ifndef CP_SRC_CPINTERNALLOGGINGUTILS
+#define CP_SRC_CPINTERNALLOGGINGUTILS
 
 #define CP_LOG(WARN_LEVEL, MSG)						\
     printf("%s:%d:1: %s: %s\n", __FILE__, __LINE__, WARN_LEVEL, MSG)
@@ -22,3 +24,6 @@ bool cp_assert_internal(bool b, const char *b_expression, const char *file, int 
 #define CP_ASSERT_SET(EXPR, BOOL)		\
     CP_ASSERT(EXPR);				\
     BOOL = (EXPR)
+
+
+#endif
