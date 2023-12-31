@@ -6,7 +6,6 @@ struct CpAsciiStringView {
     ssize len_including_nul;
 };
 
-
 // TODO: write test functions for these
 struct CpAsciiStringView
 CpAsciiStringView_from_const_cstr_unchecked(const char *cstr, ssize cstr_len);
@@ -155,6 +154,14 @@ cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(voi
 	);
 
     return all_ok;
+}
+
+bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b);
+bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b) {
+    if (a.len_including_nul != b.len_including_nul) return false;
+    ssize len = a.len_including_nul;
+
+    return 0 == memcmp(a.chars, b.chars, len);
 }
 
 #endif
