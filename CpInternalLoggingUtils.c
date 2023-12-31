@@ -25,5 +25,4 @@ bool cp_assert_internal(bool b, const char *b_expression, const char *file, int 
     CP_ASSERT(EXPR);				\
     BOOL = (EXPR)
 
-
 #endif

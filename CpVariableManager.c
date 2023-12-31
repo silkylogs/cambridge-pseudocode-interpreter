@@ -59,11 +59,9 @@ bool cp_test_CpVariableManager_push_var_to_stack_unchecked(void) {
 
     ssize last_idx = manager.stack_idx - 1;
     all_ok &= CP_ASSERT(
-	// TODO: add an equality checker to CpAsciiStringView
-	0 == memcmp(
-	    &manager.var_stack[last_idx].name,
-	    &dummy_name,
-	    sizeof (struct CpAsciiStringView)));
+	CpAsciiStringView_equals(
+	    manager.var_stack[last_idx].name,
+	    dummy_name));
     
     all_ok &= CP_ASSERT(
 	0 == memcmp(

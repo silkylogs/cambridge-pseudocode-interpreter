@@ -25,8 +25,6 @@ bool cp_test_internal_atomic_type_sizes(void) {
 // Memory
 */
 
-
-
 bool cp_run_all_tests(void);
 bool cp_run_all_tests(void) {
     bool all_ok = true;
