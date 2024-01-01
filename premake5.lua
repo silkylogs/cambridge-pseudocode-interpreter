@@ -1,29 +1,53 @@
--- premake5.lua
-   workspace "CambridgePseudocodeInterpeter"
-   configurations { "linux-clang", "windows", "linux-gcc" }
+workspace "CambridgePseudocodeInterpeter"
+   architecture "X86_64"
+   configurations {
+       "Debug",
+       "Release",
+   }
+
+output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "CambridgePseudocodeInterpreter"
    kind "ConsoleApp"
    language "C"
-   cdialect "c99"
-   targetdir "bin/%{cfg.buildcfg}"
-   architecture "X86_64"   
-   -- The other files are #included with main, for now
-   files { "main.c" } 
-
-
-filter "configurations:linux-clang"
-   toolset "clang"
+   cdialect "c89"
    warnings "Everything"
+   
+   targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
+   objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")   
+   files {
+       "main.c"
+   } 
 
-filter "configurations:linux-gcc"
-   toolset "gcc"
-   warnings "Extra"
+   filter "system:windows"
+       warnings "Everything"
+       cdialect "c89"
 
-filter "configurations:windows"
-   toolset "msc"
-   warnings "Everything"
+   filter "system:linux"
+   -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
+       warnings "Extra"
+       --fatalwarnings {
+       --   "-Wwrite-strings" 
+       --   "-Wstrict-prototypes"
+       --   "-Wmissing-prototypes"
+       --   "-Wmissing-declarations"
+       --   "-Wsign-compare"
+       --   "-Wlogical-op"
+       --   "-Wtype-limits"
+       --   "-Wsuggest-attribute=pure"
+       --   "-Wsuggest-attribute=const"
+       --   "-Wsuggest-attribute=noreturn"
+       --   "-Wsuggest-attribute=format"
+       --   "-Wformat-nonliteral"
+       --   "-fdiagnostics-color=never"
+       --   "-Werror=vla"
+       --}  
 
+   filter "configurations:Debug"
+       symbols "On"
+       
+   filter "configurations:Release"
+       optimize "On"
 
 newaction {
    trigger     = "clean-build",
@@ -34,32 +58,3 @@ newaction {
       print("Done.")
    end
 }
-
-newaction {
-   trigger     = "show-configs",
-   description = "Shows the configurations available",
-   execute     = function ()
-      print("Configurations available: ")
-      --for i,line in ipairs(configurations) do
-      --    print(i,line)
-      --end
-      print("for now, please check the build script for available configs")
-   end
-}
-
--- TODO: make the compilers heed these warnings
---       backported from the old build script
---   "-Wwrite-strings"
---   "-Wstrict-prototypes"
---   "-Wmissing-prototypes"
---   "-Wmissing-declarations"
---   "-Wsign-compare"
---   "-Wlogical-op"
---   "-Wtype-limits"
---   "-Wsuggest-attribute=pure"
---   "-Wsuggest-attribute=const"
---   "-Wsuggest-attribute=noreturn"
---   "-Wsuggest-attribute=format"
---   "-Wformat-nonliteral"
---   "-fdiagnostics-color=never"
---   "-Werror=vla"

@@ -1,13 +1,12 @@
-# The main executable
-cpi
-
-# Thanks, emacs
-*~
-
 # Build files
 *.sln
 *.vcxproj
-bin
-obj
 *.make
 Makefile
+
+bin
+obj
+bin-temp-obj
+
+# Thanks, emacs
+*~
