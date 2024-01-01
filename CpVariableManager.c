@@ -1,12 +1,7 @@
 #ifndef CP_SRC_VARIABLE_MANAGER
 #define CP_SRC_VARIABLE_MANAGER
 
-struct CpEnum { ssize as_num; };
 
-struct CpVariableType {
-    struct CpAsciiStringView name;
-    struct CpEnum id;
-};
 
 struct CpVariableInfo {
     struct CpAsciiStringView name;

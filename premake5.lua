@@ -26,22 +26,21 @@ project "CambridgePseudocodeInterpreter"
    filter "system:linux"
    -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
        warnings "Extra"
-       --fatalwarnings {
-       --   "-Wwrite-strings" 
-       --   "-Wstrict-prototypes"
-       --   "-Wmissing-prototypes"
-       --   "-Wmissing-declarations"
-       --   "-Wsign-compare"
-       --   "-Wlogical-op"
-       --   "-Wtype-limits"
-       --   "-Wsuggest-attribute=pure"
-       --   "-Wsuggest-attribute=const"
-       --   "-Wsuggest-attribute=noreturn"
-       --   "-Wsuggest-attribute=format"
-       --   "-Wformat-nonliteral"
-       --   "-fdiagnostics-color=never"
-       --   "-Werror=vla"
-       --}  
+       fatalwarnings {
+          "write-strings",
+          "strict-prototypes",
+          "missing-prototypes",
+          "missing-declarations",
+          "sign-compare",
+          "logical-op",
+          "type-limits",
+          "suggest-attribute=pure",
+          "suggest-attribute=const",
+          "suggest-attribute=noreturn",
+          "suggest-attribute=format",
+          "format-nonliteral",
+          "error=vla",
+       }  
 
    filter "configurations:Debug"
        symbols "On"
