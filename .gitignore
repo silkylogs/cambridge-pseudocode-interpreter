@@ -9,3 +9,5 @@ cpi
 *.vcxproj
 bin
 obj
+*.make
+Makefile
