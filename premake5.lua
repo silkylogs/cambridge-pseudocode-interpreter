@@ -1,13 +1,39 @@
 -- premake5.lua
    workspace "CambridgePseudocodeInterpeter"
-   configurations { "All" }
+   configurations { "linux-clang", "windows", "linux-gcc" }
 
 project "CambridgePseudocodeInterpreter"
    kind "ConsoleApp"
    language "C"
-   cdialect "c17"
+   cdialect "c99"
    targetdir "bin/%{cfg.buildcfg}"
-   files { "main.c" }
+   architecture "X86_64"   
+   -- The other files are #included with main, for now
+   files { "main.c" } 
+
+
+filter "configurations:linux-clang"
+   toolset "clang"
+   warnings "Everything"
+
+filter "configurations:linux-gcc"
+   toolset "gcc"
+   warnings "Extra"
+
+filter "configurations:windows"
+   toolset "msc"
+   warnings "Everything"
+
+
+newaction {
+   trigger     = "clean-build",
+   description = "Removes the build file and its contents",
+   execute     = function ()
+      print("Cleaning...")
+      os.rmdir("./bin")
+      print("Done.")
+   end
+}
 
 -- TODO: make the compilers heed these warnings
 --       backported from the old build script
@@ -25,19 +51,3 @@ project "CambridgePseudocodeInterpreter"
 --   "-Wformat-nonliteral"
 --   "-fdiagnostics-color=never"
 --   "-Werror=vla"
-
-filter "configurations:All"
-   defines { "" }
-   symbols "On"
-   architecture "X86_64"
-   warnings "Everything"
-
-newaction {
-   trigger     = "clean-build",
-   description = "Removes the build file and its contents",
-   execute     = function ()
-      print("Cleaning...")
-      os.rmdir("./bin")
-      print("Done.")
-   end
-}

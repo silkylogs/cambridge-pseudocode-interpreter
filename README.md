@@ -4,12 +4,28 @@ Cambridge A level computer science teacher's pseudocode guide
 
 ## Build instructions
 ### Windows
-Setting up build environment:
 ```bat
+:: Setting up build environment:
 premake5 vs2019
+
+:: Compiling:
+msbuild CambridgePseudocodeInterpeter.sln
 ```
 
-Compiling:
-```bat
-msbuild CambridgePseudocodeInterpeter.sln
+### Linux, with clang
+```sh
+# Setting up build environment:
+premake5 gmake
+
+# Compile
+make config=linux-clang
+```
+
+### Linux, with gcc
+```sh
+# Setting up build environment:
+premake5 gmake
+
+# Compile
+make config=linux-gcc
 ```
