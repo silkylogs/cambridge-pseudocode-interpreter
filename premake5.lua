@@ -35,6 +35,18 @@ newaction {
    end
 }
 
+newaction {
+   trigger     = "show-configs",
+   description = "Shows the configurations available",
+   execute     = function ()
+      print("Configurations available: ")
+      --for i,line in ipairs(configurations) do
+      --    print(i,line)
+      --end
+      print("for now, please check the build script for available configs")
+   end
+}
+
 -- TODO: make the compilers heed these warnings
 --       backported from the old build script
 --   "-Wwrite-strings"
