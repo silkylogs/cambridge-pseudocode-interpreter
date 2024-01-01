@@ -1,5 +1,5 @@
-#ifndef CP_SRC_CPINTERNALLOGGINGUTILS
-#define CP_SRC_CPINTERNALLOGGINGUTILS
+#ifndef CP_SRC_INTERNAL_LOGGING_UTILS
+#define CP_SRC_INTERNAL_LOGGING_UTILS
 
 #define CP_LOG(WARN_LEVEL, MSG)						\
     printf("%s:%d:1: %s: %s\n", __FILE__, __LINE__, WARN_LEVEL, MSG)
@@ -14,7 +14,7 @@ bool cp_assert_internal(bool b, const char *b_expression, const char *file, int 
 	printf("%s:%d:1: Assertion failure:\n"
 	       "---------- Expression starts here: ----------\n"
 	       "%s\n"
-	       "---------- Expression ends here.   ----------\n",
+	       "---------- Expression ends here.   ----------\n\n",
 	       file, line, b_expression);
     return b;
 }

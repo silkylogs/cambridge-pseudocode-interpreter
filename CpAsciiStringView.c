@@ -1,5 +1,5 @@
-#ifndef CP_SRC_ASCIISTRINGVIEW
-#define CP_SRC_ASCIISTRINGVIEW
+#ifndef CP_SRC_ASCII_STRING_VIEW
+#define CP_SRC_ASCII_STRING_VIEW
 
 struct CpAsciiStringView {
     char *chars;

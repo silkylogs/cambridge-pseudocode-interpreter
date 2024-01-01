@@ -1,5 +1,5 @@
-#ifndef CP_SRC_CPVARIABLEMANAGER
-#define CP_SRC_CPVARIABLEMANAGER
+#ifndef CP_SRC_VARIABLE_MANAGER
+#define CP_SRC_VARIABLE_MANAGER
 
 struct CpEnum { ssize as_num; };
 
