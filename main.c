@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
-typedef signed long long int ssize;
+typedef int64_t ssize;
 
 #include "CpInternalLoggingUtils.c"
 #include "CpAsciiStringView.c"
-#include "CpVariableManager.c"
+#include "CpTypeManager.c"
+//#include "CpVariableManager.c"
 
 bool cp_test_internal_atomic_type_sizes(void);
 bool cp_test_internal_atomic_type_sizes(void) {
@@ -32,7 +34,8 @@ bool cp_run_all_tests(void) {
     all_ok &= CP_ASSERT(cp_test_internal_atomic_type_sizes());
     all_ok &= CP_ASSERT(cp_test_CpAsciiStringView_from_const_cstr());
     all_ok &= CP_ASSERT(cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked());
-    all_ok &= CP_ASSERT(cp_test_CpVariableManager_push_var_to_stack_unchecked());
+    all_ok &= CP_ASSERT(cp_test_CpTypeManager());
+    /*all_ok &= CP_ASSERT(cp_test_CpVariableManager_push_var_to_stack_unchecked());*/
     
     return all_ok;
 }
