@@ -1,11 +1,20 @@
-# Cambridge pseudocode language specification, v0.0.1
+# Cambridge Pseudocode Language specification, v0.0.1
 
+## Abstract
+This document presents a specification for a possible implementation of the 
+Cambridge Pseudocode Programming language, as derived from the document titled
+"Cambridge International AS & A Level Computer Science 9608 – Pseudocode Guide for Teachers", 2017.
 
 ## Indentation
 ---
-Lines are indented by three spaces to indicate that they are contained within
-a statement in a previous line. Continuation lines are always indented by two
-spaces.
+The following rules apply to an autoformatter. 
+This implementation will not implement continuation lines.
+
+Lines are indented by four spaces to indicate that they are contained within
+a statement in a previous line. Continuation lines are always indented by two spaces.
+
+A continuation line is a line of code that is intended to be concatenated
+to the previous line. This line is identified by a token, which is `  ` (Two spaces).
 
 An example demonstrating correct indentation (to be updated for a) clarity
 b) correctness):
@@ -55,6 +64,9 @@ ENDFUNCTION
 Comments are preceded by two forward slashes `//`. The comment continues until
 the end of the line. For multi-line comments, each line is preceded by `//`.
 
+Interpretation of code stops from when the comment token is encountered, 
+up to the newline character.
+
 An example of a program with valid commenting:
 ```
 // this procedure swaps
@@ -67,7 +79,37 @@ PROCEDURE SWAP(BYREF X : INTEGER, Y INTEGER)
 ENDPROCEDURE
 ```
 
+## Atomic ("Primitive") type names
+---
+An "atomic type" is defined as a data type from which all other data types may be constructed.
 
+These types that will be available are:
+- `INTEGER`: a whole number
+- `REAL`: a number capable of containing a fractional part
+- `CHAR`: a single character
+- `STRING`: a sequence of zero or more characters
+- `BOOLEAN`: the logical values `TRUE` and `FALSE`
+- `DATE`: a valid calendar date
+
+## Literals >>>> (todo) <<<<
+---
+A more detailed description, as well as the representation of their
+corresponding literals are as follows:
+
+- Integers are signed whole numbers, written as normal in the denary system,
+  e.g. `5`, `-3`
+- Reals are signed numbers with a fractional part whose literal is always has
+  at least one digit on either side of the decimal point, zeros being added if
+  necessary, e.g. `4.7`, `0.3`, `-4.0`, `0.0`
+- Chars are single characters delimited by single quotes e.g. `'x'`,`'C'`,`'@'`
+- Strings are sequences of zero or more characters delimited by double quotes.
+  A string may contain no characters (i.e. the empty string)
+  e.g. `"This is a string"`, `""`
+- Boolean are the logical values `TRUE` and `FALSE`
+- Dates are valid calendar dates, which will be written in the format
+  `dd/mm/yyyy`. (Internally, they could be represented by a struct with three
+  values for date, month and year, and could be handled specially by the
+  `INPUT` and `OUTPUT` commands)
 
 
 ## Variables and constants
@@ -99,47 +141,6 @@ Other examples of valid constant declarations include:
 CONSTANT HourlyRate = 6.50
 CONSTANT DefaultText = "N/A"
 ```
-
-
-
-
-## Basic datatypes
----
-The basic datatypes to be supported by the compiler include:
-
-- `INTEGER`	a whole number
-- `REAL`	a number capable of containing a fractional part
-- `CHAR`	a single character
-- `STRING`	a sequence of zero or more characters
-- `BOOLEAN`	the logical values TRUE and FALSE
-- `DATE`	a valid calendar date
-
-Any variable which is redeclared will have their values initalized.
-
-
-
-
-## Literals
----
-A more detailed description, as well as the representation of their
-corresponding literals are as follows:
-
-- Integers are signed whole numbers, written as normal in the denary system,
-  e.g. `5`, `-3`
-- Reals are signed numbers with a fractional part whose literal is always has
-  at least one digit on either side of the decimal point, zeros being added if
-  necessary, e.g. `4.7`, `0.3`, `-4.0`, `0.0`
-- Chars are single characters delimited by single quotes e.g. `'x'`,`'C'`,`'@'`
-- Strings are sequences of zero or more characters delimited by double quotes.
-  A string may contain no characters (i.e. the empty string)
-  e.g. `"This is a string"`, `""`
-- Boolean are the logical values `TRUE` and `FALSE`
-- Dates are valid calendar dates, which will be written in the format
-  `dd/mm/yyyy`. (Internally, they could be represented by a struct with three
-  values for date, month and year, and could be handled specially by the
-  `INPUT` and `OUTPUT` commands)
-
-
 
 
 ## Identifiers
