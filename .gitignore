@@ -1,12 +1,16 @@
 # Build files
 *.sln
-*.vcxproj
+*.vcxproj*
 *.make
 Makefile
 
+# Temporary files
 bin
 obj
 bin-temp-obj
 
 # Thanks, emacs
 *~
+
+# and VSCode, too
+*.vs

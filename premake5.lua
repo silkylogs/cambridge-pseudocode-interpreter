@@ -1,7 +1,6 @@
 workspace "CambridgePseudocodeInterpeter"
    architecture "X86_64"
    configurations {
-       "Debug",
        "Release",
    }
 
@@ -10,7 +9,7 @@ output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 project "CambridgePseudocodeInterpreter"
    kind "ConsoleApp"
    language "C"
-   cdialect "c89"
+   cdialect "c99"
    warnings "Everything"
    
    targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
@@ -20,8 +19,8 @@ project "CambridgePseudocodeInterpreter"
    } 
 
    filter "system:windows"
-       warnings "Everything"
-       cdialect "c89"
+       warnings "Extra"
+       cdialect "c99"
 
    filter "system:linux"
    -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
