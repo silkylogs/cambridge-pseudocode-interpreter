@@ -1,9 +1,126 @@
-# Cambridge Pseudocode Language specification, v0.0.1
+# Cambridge Pseudocode 2017 Language specification, v0.0.1
 
 ## Abstract
 This document presents a specification for a possible implementation of the 
 Cambridge Pseudocode Programming language, as derived from the document titled
 "Cambridge International AS & A Level Computer Science 9608 – Pseudocode Guide for Teachers", 2017.
+
+## Grammar
+A BNF for this language is as follows:
+```
+<statements>  ::= <statements> <eol> <statements>
+              ::= <statement> | <statement_with_comment>
+
+<statement_with_comment> ::= <statement> <comment>
+<comment> ::= "//" <text> <eol>
+
+<statement> ::= <var_decl>
+            ::= <const_decl>
+            ::= <array_decl>
+            ::= <assignment>
+            ::= <custom_type_decl>
+            ::= <input>
+            ::= <output>
+            ::= <if_then_endif>
+            ::= <if_then_else_endif>
+            ::= <case_of_endcase>
+            ::= <case_of_otherwise_endcase>
+            ::= <for_to_endfor>
+            ::= <for_to_step_endfor>
+            ::= <repeat_until>
+            ::= <while_do_endwhile>
+            ::= <proc>
+            ::= <proc_with_params>
+            ::= <call_proc>
+            ::= <call_proc_with_params>
+            ::= <fn>
+            ::= <fn_with_params>
+            ::= <openfile_for_mode>
+            ::= <readfile>
+            ::= <writefile>
+            ::= <closefile>
+            ::= <seek>
+            ::= <getrecord>
+            ::= <putrecord>
+
+<var_decl>    ::= "DECLARE "  <identifier> ":" <datatype> <eol>
+<datatype>    ::= <identifier> | <prim_dt>
+<prim_dt>     ::= "INTEGER" | "REAL" | "CHAR" | "STRING" | "BOOLEAN" | "DATE"
+
+<const_decl>  ::= "CONSTANT " <identifier> ":" <datatype> <eol>
+
+<array_decl>  ::= "DECLARE "  <identifier> ":" "ARRAY" "[" <array_list> "]" "OF" <datatype>
+<array_list>  ::= <array_list> "," <array_list>
+              ::= <expr> ":" <expr>
+<expr>  ::= <expr> "AND"|"OR" <expr>
+        ::= <expr> "<"|">"|"<="|">="|"="|"<>" <expr>
+        ::= <expr> "+"|"-" <expr>
+        ::= <expr> "*"|"/"|"MOD"|"DIV" <expr>
+        ::= "NOT" <expr>
+        ::= <expr> "." <expr>
+        ::= "[" <expr> "]"
+        ::= "(" <expr> ")"
+        ::= <literal>
+
+<literal>     ::= <int_lit> | <real_lit> | <char_lit> | <string_lit> | <bool_lit> | <date_lit>
+<int_lit>     ::= <0-9>
+<real_lit>    ::= <int_lit> "." <int_lit>
+<char_lit>    ::= "\'"<all printable ascii chars>"\'"
+<string_lit>  ::= "\""<text>"\""
+<bool_lit>    ::= "TRUE" | "FALSE"
+<date_lit>    ::= <int_lit>"/"<int_lit>"/"<int_lit>
+
+<assignment>  ::= <expr> "<-" <expr>
+
+<custom_type_decl>  ::= "TYPE " <identifier> <decl_list> "ENDTYPE"
+<decl_list> ::= <decl> <eol> <decl>
+            ::= <decl>
+<decl>      ::= <var_decl> | <array_decl> | <const_decl> | <type_decl>
+
+
+<input>   ::= "INPUT " <expr>
+<output>  ::= "OUTPUT " <output_list>
+<output_list> ::= <output_list> "," <output_list>
+              ::= <expr>
+
+<if_then_endif>       ::= "IF " <expr> "THEN " <statements> "ENDIF"
+<if_then_else_endif>  ::= "IF " <expr> "THEN " <statements> "ELSE " <statements> "ENDIF"
+
+<case_of_endcase>           ::= "CASE " "OF " <expr> <eol> <val_colon_statement_list> "ENDCASE"
+<val_colon_statement_list>  ::= <val_colon_statement_list> <eol> <val_colon_statement_list>
+                            ::= <expr> ":" <statement>
+
+<case_of_otherwise_endcase> ::= "CASE " "OF " <expr> <eol> 
+                                <val_colon_statement_list> "OTHERWISE " <statement> "ENDCASE"
+
+<for_to_endfor>       ::= "FOR " <identifier> "<-" <expr> "TO" <expr> <statements> "ENDFOR"
+<for_to_step_endfor>  ::= "FOR " <identifier> "<-" <expr> "TO" <expr> "STEP" <expr> <statements> "ENDFOR"
+<repeat_until>          ::= "REPEAT " <statements> "UNTIL " <expr>
+<while_do_endwhile>     ::= "WHILE " <expr> "DO " <statements> "ENDWHILE"
+<proc>                  ::= "PROCEDURE " <identifier> "ENDPROCEDURE"
+
+<proc_with_params>      ::= "PROCEDURE " <identifier> "(" <param_datatype_list> ")" <statements> "ENDPROCEDURE"
+<param_datatype_list>   ::= <param_datatype_list> "," <param_datatype_list>
+                        ::= <identifier> ":" <datatype>
+
+; TODO: add byref and byval qualifiers for functions and procs
+<call_proc>             ::= "CALL " <identifier>
+<call_proc_with_params> ::= "CALL " <identifier> "(" <expr_list> ")"
+<expr_list>             ::= <expr> "," <expr>
+                        ::= <expr>
+
+<fn>                ::= "FUNCTION " <identifier> "RETURNS " <datatype> <statements> "ENDFUNCTION"
+<fn_with_params>    ::= "FUNCTION " <identifier> "(" <param_datatype_list> ")" <statements> "ENDFUNCTION"
+
+
+<openfile_for_mode> ::= "OPENFILE " <identifier> "FOR " <identifier>
+<readfile>  ::= "READFILE " <expr> "," <expr>
+<writefile> ::= "WRITEFILE " <expr> "," <expr>
+<closefile> ::= "CLOSEFILE " <expr>
+<seek>      ::= "SEEK " <expr> "," <expr>
+<getrecord> ::= "GETRECORD " <expr> "," <expr>
+<putrecord> ::= "PUTRECORD " <expr> "," <expr>
+```
 
 ## Indentation
 ---
@@ -91,105 +208,126 @@ These types that will be available are:
 - `BOOLEAN`: the logical values `TRUE` and `FALSE`
 - `DATE`: a valid calendar date
 
-## Literals >>>> (todo) <<<<
----
-A more detailed description, as well as the representation of their
-corresponding literals are as follows:
+Their default values will be as follows:
+- `INTEGER`:  `0`
+- `REAL`:     `0.0`
+- `CHAR`:     `' '`
+- `STRING`:   `""`
+- `BOOLEAN`:  `FALSE`
+- `DATE`:     `1/1/1970`
 
-- Integers are signed whole numbers, written as normal in the denary system,
-  e.g. `5`, `-3`
-- Reals are signed numbers with a fractional part whose literal is always has
+## Literals
+---
+A literal is a textual representation of the value of an atomic data type.
+The valid literals of the atomic data types will be represented as follows:
+
+- `INTEGER`: Integers are signed whole numbers, written as normal in the denary system,
+  e.g. `5`, `-3`.
+- `REAL`: Reals are signed numbers with a fractional part whose literal is always has
   at least one digit on either side of the decimal point, zeros being added if
   necessary, e.g. `4.7`, `0.3`, `-4.0`, `0.0`
-- Chars are single characters delimited by single quotes e.g. `'x'`,`'C'`,`'@'`
-- Strings are sequences of zero or more characters delimited by double quotes.
+- `CHAR`: Chars are single characters delimited by single quotes e.g. `'x'`,`'C'`,`'@'`
+- `STRING`: Strings are sequences of zero or more characters delimited by double quotes.
   A string may contain no characters (i.e. the empty string)
   e.g. `"This is a string"`, `""`
-- Boolean are the logical values `TRUE` and `FALSE`
-- Dates are valid calendar dates, which will be written in the format
-  `dd/mm/yyyy`. (Internally, they could be represented by a struct with three
-  values for date, month and year, and could be handled specially by the
-  `INPUT` and `OUTPUT` commands)
+- `BOOLEAN`: Booleans are the logical values `TRUE` and `FALSE`
+- `DATE`: Dates are valid calendar dates, in the format `dd/mm/yyyy`,
+  where each of the date, month and year fields are `INTEGER`s.
 
+## Identifiers
+---
+Identifiers (the names given to variables, constants, procedures and
+functions) will only contain letters `A-Z`, `a-z` and digits `0-9`.
+The first character of an identifier will not start with a digit.
+They will not contain accented characters, including the underscore (`_`),
+or emojis.
+
+Keywords listed in the "Reserved keywords and operators" section of the
+documentation will not be used as variables. Identifiers are case insensitive,
+for example, `Countdown` and `CountDown` will not refer to separate
+variables.
 
 ## Variables and constants
 ---
-The language is statically typed, hence it is required to declare variables
-explicitly in the source.
-
-The syntax of declaring a variable is:
+Variables may be declared explicitly before use. The syntax for doing that is:
 ```
 DECLARE <identifier> : <datatype>
 ```
-
-Other examples of valid variable declarations include:
+Examples of valid variable declarations:
 ```
 DECLARE Counter : INTEGER
 DECLARE TotalToPay : REAL
 DECLARE GameOver : BOOLEAN
 ```
 
-Constants are declared in a similar way, however, they cannot be the value of a
-variable (Implementation wise, they could be treated as an #include directive
-in c to simply copy and paste the value in place of the identifier)
+Variables may be implicitly brought to life by assigning the 
+result of an expression to it, as shown in these examples:
+```
+Counter <- 0              // Has type INTEGER
+TotalToPay <- 3.50        // Has type REAL
+GameOver <- Counter = 0   // Has type BOOLEAN
+```
+
+Constants are declared by stating the identifier and the literal value
+in the following format:
 ```
 CONSTANT <identifier> = <literal value>
 ```
 
-Other examples of valid constant declarations include:
+Valid examples of valid constant declarations include:
 ```
-CONSTANT HourlyRate = 6.50
-CONSTANT DefaultText = "N/A"
+CONSTANT HourlyRate = 6.50    // Has type REAL
+CONSTANT DefaultText = "N/A"  // Has type STRING
 ```
 
+Only literals will be used as the value of a constant. A variable, 
+another constant or an expression will not be used as a value of a constant.
 
-## Identifiers
----
-Identifiers (the names given to variables, constants, procedures and
-functions) are in mix case. They can only contain letters `A-Z, a-z`, digits
-`0-9` and the underscore character `_`. They may not start with a digit.
+A constant's value will not be reassigned.
 
-Keywords listed in the "Reserved keywords and operators" section of the
-documentation may not be used as variables. Identifiers are case insensitive,
-for example, `Countdown` and `CountDown` may not be used as separate
-variables.
+Once a variable or constant is declared, implicitly or explicitly, another 
+variable or constant with the same identifier, regardless of the type of that other 
+variable or constant, will not be declared, explicitly or implicitly.
 
+The lifetime of a variable or constant begins from the point where it is declared,
+either implicitly or explicitly, and ends with its scope.
+The lifetime of a global variable or constant begins from the point of its declaration
+up to the end of the program.
+
+A program will not attempt to reference the value of a variable whose lifetime has expired.
 
 
 
 ## Assignment
 ---
-The operator for assignment is a arrow pointing left `<-`, and are to be made
+The operator for assignment is a arrow pointing left `<-`, and will be made
 in the following format:
 ```
 <identifier> <- <value>
 ```
 
-The identifier must refer to a variable (this can be an individual element in
-a data structure such as an array or an abstract data type). The value may be
-any expression that evaluates to a value of the same data type as the
-variable.
+The identifier will refer to a variable (this can be an individual element in
+a data structure such as an array or an abstract data type). The value will be
+any expression that evaluates to a value of the same data type as the variable.
 
 Valid examples of assignments include:
 ```
 Counter <- 0
 Counter <- Counter + 1
 TotalToPay <- NumberOfHours * HourlyRate
+Applicants[Counter].Valid = TRUE
 ```
 
 
 
 
-## Arrays
+## Arrays >>>(TODO)<<<
 ---
-Arrays are considered to be fixed-length structures of elements of identical
-data type, accessible by consecutive index (subscript) numbers. 
-It is nessecary to state the lower bound of the array to either settle for a
-0 based or a 1 based indexing system (or of any other base, should the
-programmer wish to enter a code obfuscation contest.) Square brackets are used
-to indicate array indices.
+Arrays are fixed-length structures of elements of identical data type, 
+accessible by consecutive index (subscript) numbers.
+Square brackets are used to indicate array indices.
 
-A One-dimensional array is declared as follows:
+A one-dimensional array is declared as follows:
 ```
 DECLARE <identifier> : ARRAY[<lower>:<upper>] OF <data type>
 ```
@@ -198,7 +336,6 @@ A two-dimensional array is declared as follows:
 ```
 DECLARE <identifier> : ARRAY[<lower1>:<upper1>,<lower2>:<upper2>] OF <datatype>
 ```
-Arrays may not have a dimension count greater than two.
 
 Valid examples of array declaration are:
 ```
@@ -207,11 +344,18 @@ DECLARE NoughtsAndCrosses : ARRAY[1:3,1:3] OF CHAR
 DECLARE SavedGame : ARRAY[1:3,1:3] OF CHAR
 ```
 
-The data of an array can be copied over to another array, provided that they
-have the same size and data type:
+The values of the elements of the array will be initialized to the default
+value of its data type.
+
+Arrays will not have a dimension count greater than two.
+
+Assignment of arrays will be possible, provided that they have 
+the same size and data type.
 ```
 SavedGame <- NoughtsAndCrosses
 ```
+After the operation, the destination array will have the same data
+as that of the source array.
 
 Array elements can be individually accessed by using the following construct:
 ```
@@ -219,15 +363,14 @@ StudentNames[1] <- "Ali"
 NoughtsAndCrosses[2,3] <- 'X'
 StudentNames[n+1] <- StudentNames[n]
 ```
+Where the accessing index will be an expression resolving to `INTEGER`.
 
-However, statements like these which accesses a group of array elements in
-this explicit fashions are invalid:
+Statements like these which accesses a group of array elements in
+this particular fashion is invalid:
 ```
 StudentNames[1 TO 30]: <- ""
 ```
-
-Instead, use an appropriate loop structure to assign the elements
-individually. For example:
+There will be a recommendation to perform the following operation instead:
 ```
 FOR Index <- 1 TO 30
    StudentNames[Index] <- ""
@@ -237,10 +380,11 @@ NEXT Index
 
 
 
-## User defined datatypes
+
+
+## Custom types
 ---
-The `TYPE` keyword can be overloaded to mean different things, depending on
-the context.
+The `TYPE` keyword means different things, depending on the context.
 
 When declared as an enumerated type, where the datatype can have a discrete
 list of possible values (the equivalent of `enum` in c):
