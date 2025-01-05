@@ -64,7 +64,7 @@ typedef struct Tests {
     int ptr_to_top;
     int8_t padding[4];
 } Tests;
-Tests g_tests = {
+static Tests g_tests = {
     .fns = {0},
     .names = {0},
     .ptr_to_top = -1,
@@ -291,6 +291,35 @@ bool test_tokenizer_enum_member_matches_string(void) {
         1;
 
 }
+
+// In order to have a map of the source code that is trivially traversable, backtracking included,
+// We will need to store it as a flat array of tokens.
+// The scheme of how such a mapping could look like is demonstrated as follows:
+// ```
+// 00 // I'm pretty sure this language disallows arrays as a valid type to a procedure parameter
+// 00 PROCEDURE Sum3Nums(BYREF Arr: StructWith3NumsT)
+// 01   OUTPUT "Numbers to add:", Arr.v0, Arr.v1, Arr.v2
+// 02   OUTPUT "Their sum is:" Arr.v0 + Arr.v1 + Arr.v2
+// 03 ENDPROCEDURE
+// ```
+//
+// LINE0 PROCEDURE Sum3Nums ( BYREF Arr : StructWithThreeNumsT ) NL
+//
+// on second thought, backtracking doesnt seem worth it if it's only goal is to be conveniently able to deliver good error messages.
+// we're only going to be consuming tokens in the forward direction
+//
+// to impose the guarantee of our parser beginning at a statement,
+// we should define the keywords that are guaranteed to be present at the beginning of a statement and then check
+// against them. orienting our problem in terms of handling a sequence of statements will increase implementation speed.
+//
+// such a procedure could be handled by...
+void cp_parse_statement(int *out_tree, char *in_statement);
+
+struct FatToken {
+    enum TokenKind kind;
+    char *src_mapping_start;
+    int token_len_bytes;
+};
 
 // Tokenizes a string.
 // a better description of its behaviour will be written soon.
