@@ -3,6 +3,8 @@
 *.vcxproj*
 *.make
 Makefile
+*.xc*
+.DS_Store
 
 # Temporary files
 bin
