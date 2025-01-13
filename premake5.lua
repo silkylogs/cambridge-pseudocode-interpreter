@@ -1,7 +1,8 @@
 workspace "CambridgePseudocodeInterpeter"
    architecture "X86_64"
    configurations {
-       "Release",
+       "Debug",
+    --    "Release"
    }
 
 output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"

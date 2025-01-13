@@ -120,13 +120,13 @@ bool test_succeed(void) {
 #ifndef CP_SRC_ASCII_STRING_VIEW
 #define CP_SRC_ASCII_STRING_VIEW
 
-struct CP_StringView {
-    char *chars;
+typedef struct CP_StringView {
+    char *start;
     int32_t sz; // Includes null terminator
-};
+} CP_StringView;
 
-#define CP_STRING_VIEW_LITERAL(str) (struct CpStringView){ str, sizeof str }
-#define SL(str) CP_STRING_VIEW_LITERAL(str)
+#define CP_STRING_VIEW_LITERAL(str) (struct CP_StringView){ .start=str, .sz=sizeof str }
+#define SVL(str) CP_STRING_VIEW_LITERAL(str)
 
 // -- from_const_cstr --------------------------
 
@@ -168,7 +168,7 @@ bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str) {
 
 
 bool cp_test_CpAsciiStringView_from_const_cstr(void) {
-    // Test the macro checks for obvious defects  
+    // Test the macro checks for obvious defects
     CP_ASSERT(false == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(NULL));
     CP_ASSERT(true == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(""));
 
@@ -176,7 +176,7 @@ bool cp_test_CpAsciiStringView_from_const_cstr(void) {
     test = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("This string has 25 chars");
     CP_ASSERT(test.len_including_nul == 25);
     CP_ASSERT(test.chars != NULL);
-  
+
     return true;
 }
 
@@ -236,7 +236,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
 {
     struct CpAsciiStringView string = pair.string;
     struct CpAsciiStringView substring = pair.substring;
-    
+
     if (substring.len_including_nul > string.len_including_nul) return false;
     for (ssize str_i = 0; str_i < string.len_including_nul; ++str_i) {
     if (string.chars[str_i] == substring.chars[0]) {
@@ -246,7 +246,7 @@ CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
         {
         char str_char = string.chars[str_i + sub_i];
         char sub_char = substring.chars[sub_i];
-        
+
         //printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
         if (sub_char == '\0') return true;
         if (str_char != sub_char) return false;
@@ -553,34 +553,76 @@ void cp_tokenize(
 // (1) + (2 + 3)
 // ((1) + 2) + 3
 typedef struct Iter {
-    char *substr_start;
-    int32_t substr_len;
+    CP_StringView substr;
     int32_t result;
 } Iter;
-Iter test_iter {
-    .substr_start = "1+2+3",
-    .substr_len = sizeof "1+2+3",
-    .result = 0,
-};
-Iter cp_eval_expr(Iter it) { // TODO
-    // If len == 1, return atoi(substr)
-    // Search for +
-    // Recurse for left and right children.
 
-    Iter lt = { .substr_start=it.substr_start, .substr_len=(it.substr_start) }; // left of current char
-    Iter rt = // right of current char
+// 1 + 2 + 3
+//       ^
 
-    if (it.substr_len == 1) return atoi(*it.substr_start);
+// Infinite recursion possible reason - mismatch b/w
+// zero terminated c-string and sized strings
+//
+// I'll stick to the convention (size = (null) terminator - start)
+Iter cp_eval_expr(Iter it)
+{
+    const char* end = it.substr.start + it.substr.sz;
+    Iter rv = it;
 
-    Iter resl = cp_eval_expr(it);
-    Iter resr = cp_eval_expr(it);
+    printf("Evaluating substring: \"%.*s\"\n", it.substr.sz, it.substr.start);
 
-    Iter res  = { .result = resl.result + resr.result };
-    return res;
+    // Look for operator
+    // If operator found, split.
+    //
+    // Search is done backward so that the termini of the resulting tree
+    // involve the leftmost tokens of the expression.
+    // i.e. expression is evaluated left to right.
+    const char* op_loc;
+    for (
+        op_loc = end - 1;
+        *op_loc != '+' && op_loc >= it.substr.start - 1;
+        --op_loc
+    );
+    bool op_found = (op_loc != it.substr.start - 1) && (*op_loc == '+');
+    printf("Is op found? %s\n", op_found ? "true" : "false");
+    if (op_found) {
+        // Determine left and right substrings.
+        Iter lt;
+        lt.substr.start = it.substr.start;
+        lt.substr.sz = (op_loc)-lt.substr.start;
+        printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
+        Iter val1 = cp_eval_expr(lt);
+
+        Iter rt;
+        rt.substr.start = op_loc + 1;
+        rt.substr.sz = (it.substr.start + it.substr.sz) - rt.substr.start;
+        printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
+        Iter val2 = cp_eval_expr(rt);
+
+        rv.result = val1.result + val2.result;
+        printf("lt + rt = %d\n", rv.result);
+        return rv;
+    }
+
+    // If termini found (i.e. *c is a number), return the number.
+    const char c = *it.substr.start;
+    bool is_num = c >= '0' && c <= '9';
+    if (is_num) {
+        rv.result = c - '0';
+        printf("Returning terminal int: %d\n", rv.result);
+    } else {
+        printf("number not found, is %c, returning\n", c);
+    }
+    return rv;
 }
 
 bool test_cp_eval_expr(void) {
-    return CP_ASSERT(cp_eval_expr(test_iter).result == 6);
+    Iter test_iter;
+    // test_iter.substr = SVL("1+2+3");
+    // return CP_ASSERT(cp_eval_expr(test_iter).result == 6);
+
+    test_iter.substr = SVL("4+5+9");
+    return CP_ASSERT(cp_eval_expr(test_iter).result == 18);
 }
 
 // -- Main ----
