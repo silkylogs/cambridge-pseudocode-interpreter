@@ -93,7 +93,7 @@ static void cp_run_tests(Tests ts) {
     for (int32_t i = 0; i <= ts.ptr_to_top; ++i) {
         CP_LEVEL_LOG(
             "Test",
-            "%10.10d/%10.10d: \"%s\"... %s\n",
+            "%5.5d/%5.5d: \"%s\"... %s\n",
             i, ts.ptr_to_top,
             ts.names[i],
             (ok = (ts.fns[i])())? "Ok" : "Error"
@@ -111,195 +111,218 @@ bool test_succeed(void) {
     return 1 + 1 == 2;
 }
 
-// -- StringView ----
+// -- String ----
 //
-// An abstraction representing sized, null terminated strings.
-// The decision to have both null termination as well as a size is to
-// be able to interop with c's string functions while retaining the convenience of sized strings.
+// An abstraction representing a string of characters.
+//
+// Contract:
+// - The string points to a valid reigon of memory.
+// - The size will always be positive.
+// - The size will include the null terminator. 
+//   Rationale:
+//      The decision to have both null termination as well as a size is to
+//      be able to interop with c's string functions while retaining the convenience of sized strings.
+// - If the size is zero, no null terminator is nessecary.
 
 #ifndef CP_SRC_ASCII_STRING_VIEW
 #define CP_SRC_ASCII_STRING_VIEW
 
-typedef struct CP_StringView {
+typedef struct CP_StringIncludingZeroTerminator {
     char *start;
-    int32_t sz; // Includes null terminator
-} CP_StringView;
+    int32_t sz;
+} CP_StringIncludingZeroTerminator, CP_StrZT;
 
-#define CP_STRING_VIEW_LITERAL(str) (struct CP_StringView){ .start=str, .sz=sizeof str }
-#define SVL(str) CP_STRING_VIEW_LITERAL(str)
+#define CP_STRING_INCLUDING_ZT_LITERAL(str) (CP_StrZT){ .start=str, .sz=sizeof (str) }
+#define SL(str) CP_STRING_INCLUDING_ZT_LITERAL(str)
+
+// -- Substring ----
+//
+// An abstraction representing a subset of a string.
+//
+// Contract:
+// - Pointer to start of substring will always be at a lower address than the end pointer.
+// - The substring points to a valid reigon in memory.
+// - The substring will not include any null terminators.
+
+typedef struct CP_InclusiveUnidirectionalSubstring {
+    char *start, end;
+} CP_InclusiveUnidirectionalSubstring, CP_SubStr;
+
+#define CP_INCLUSIVE_UNIDIR_SUBSTRING_LITERAL(str) (CP_SubStr){ .start=str, .end=(str + sizeof (str) - 1) }
+#define SUBL(str) CP_INCLUSIVE_UNIDIR_SUBSTRING_LITERAL(str)
 
 // -- from_const_cstr --------------------------
 
 /*
-struct CpAsciiStringView CpAsciiStringView_from_const_cstr_unchecked(const char *cstr, ssize cstr_len);
-bool CpAsciiStringView_from_const_cstr_check(const char *cstr, ssize cstr_len);
-bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str);
-bool cp_test_CpAsciiStringView_from_const_cstr(void);
+    struct CpAsciiStringView CpAsciiStringView_from_const_cstr_unchecked(const char *cstr, ssize cstr_len);
+    bool CpAsciiStringView_from_const_cstr_check(const char *cstr, ssize cstr_len);
+    bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str);
+    bool cp_test_CpAsciiStringView_from_const_cstr(void);
 
 
-struct CpAsciiStringView
-CpAsciiStringView_from_const_cstr_unchecked(const char *cstr, ssize cstr_len) {
-    return (struct CpAsciiStringView) {
-        .chars = (char *)cstr,
-        .len_including_nul = cstr_len,
+    struct CpAsciiStringView
+    CpAsciiStringView_from_const_cstr_unchecked(const char *cstr, ssize cstr_len) {
+        return (struct CpAsciiStringView) {
+            .chars = (char *)cstr,
+            .len_including_nul = cstr_len,
+        };
+    }
+
+    #define CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(CSTR)		\
+        CpAsciiStringView_from_const_cstr_unchecked((CSTR), sizeof (CSTR))
+
+
+    bool
+    CpAsciiStringView_from_const_cstr_check(const char *cstr, ssize cstr_len) {
+        if (cstr == NULL) return false;
+        if (cstr_len < 0) return false;
+        return true;
+    }
+
+    #define CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(CSTR)			\
+        CpAsciiStringView_from_const_cstr_check((CSTR), sizeof (CSTR))
+
+
+    // Note: This exists in the first place because I thought some casting may be required
+    //       in order to call const_cstr_check
+    bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str) {
+        return CpAsciiStringView_from_const_cstr_check(str.chars, str.len_including_nul);
+    }
+
+
+    bool cp_test_CpAsciiStringView_from_const_cstr(void) {
+        // Test the macro checks for obvious defects
+        CP_ASSERT(false == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(NULL));
+        CP_ASSERT(true == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(""));
+
+        struct CpAsciiStringView test;
+        test = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("This string has 25 chars");
+        CP_ASSERT(test.len_including_nul == 25);
+        CP_ASSERT(test.chars != NULL);
+
+        return true;
+    }
+
+    // -- from_const_cstr --------------------------
+
+
+    // -- substring --------------------------------
+
+    struct CpAsciiStringView CpAsciiStringView_substring_unchecked(
+        struct CpAsciiStringView string,
+        ssize idx1, ssize idx2);
+    bool CpAsciiStringView_substring_check(
+        struct CpAsciiStringView string,
+        ssize idx1, ssize idx2);
+
+
+    struct CpAsciiStringView
+    CpAsciiStringView_substring_unchecked(struct CpAsciiStringView string, ssize idx1, ssize idx2) {
+        if (idx1 > idx2) { ssize temp = idx1; idx1 = idx2; idx2 = temp; }
+
+        struct CpAsciiStringView substr = {
+        .chars = &string.chars[idx1],
+        .len_including_nul = idx2 - idx1
+        };
+
+        return substr;
+    }
+
+
+
+    bool
+    CpAsciiStringView_substring_check(struct CpAsciiStringView string, ssize idx1, ssize idx2) {
+        // Out of bounds check
+        if (idx1 < 0 || idx1 >= string.len_including_nul) return false;
+        if (idx2 < 0 || idx2 >= string.len_including_nul) return false;
+
+        // Source string anomaly check
+        if (!CpAsciiStringView_check_well_formed(string)) return false;
+
+        return true;
+    }
+
+    // -- substring --------------------------------
+
+
+    struct CpAsciiStringView_StringSubstringPair {
+        struct CpAsciiStringView string;
+        struct CpAsciiStringView substring;
     };
-}
 
-#define CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(CSTR)		\
-    CpAsciiStringView_from_const_cstr_unchecked((CSTR), sizeof (CSTR))
+    bool CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
+        struct CpAsciiStringView_StringSubstringPair);
 
+    bool
+    CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
+        struct CpAsciiStringView_StringSubstringPair pair)
+    {
+        struct CpAsciiStringView string = pair.string;
+        struct CpAsciiStringView substring = pair.substring;
 
-bool
-CpAsciiStringView_from_const_cstr_check(const char *cstr, ssize cstr_len) {
-    if (cstr == NULL) return false;
-    if (cstr_len < 0) return false;
-    return true;
-}
+        if (substring.len_including_nul > string.len_including_nul) return false;
+        for (ssize str_i = 0; str_i < string.len_including_nul; ++str_i) {
+        if (string.chars[str_i] == substring.chars[0]) {
+            for (ssize sub_i = 0;
+            sub_i < substring.len_including_nul && sub_i < substring.len_including_nul;
+            ++sub_i)
+            {
+            char str_char = string.chars[str_i + sub_i];
+            char sub_char = substring.chars[sub_i];
 
-#define CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(CSTR)			\
-    CpAsciiStringView_from_const_cstr_check((CSTR), sizeof (CSTR))
-
-
-// Note: This exists in the first place because I thought some casting may be required
-//       in order to call const_cstr_check
-bool CpAsciiStringView_check_well_formed(struct CpAsciiStringView str) {
-    return CpAsciiStringView_from_const_cstr_check(str.chars, str.len_including_nul);
-}
-
-
-bool cp_test_CpAsciiStringView_from_const_cstr(void) {
-    // Test the macro checks for obvious defects
-    CP_ASSERT(false == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(NULL));
-    CP_ASSERT(true == CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_CHECK(""));
-
-    struct CpAsciiStringView test;
-    test = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("This string has 25 chars");
-    CP_ASSERT(test.len_including_nul == 25);
-    CP_ASSERT(test.chars != NULL);
-
-    return true;
-}
-
-// -- from_const_cstr --------------------------
-
-
-// -- substring --------------------------------
-
-struct CpAsciiStringView CpAsciiStringView_substring_unchecked(
-    struct CpAsciiStringView string,
-    ssize idx1, ssize idx2);
-bool CpAsciiStringView_substring_check(
-    struct CpAsciiStringView string,
-    ssize idx1, ssize idx2);
-
-
-struct CpAsciiStringView
-CpAsciiStringView_substring_unchecked(struct CpAsciiStringView string, ssize idx1, ssize idx2) {
-    if (idx1 > idx2) { ssize temp = idx1; idx1 = idx2; idx2 = temp; }
-
-    struct CpAsciiStringView substr = {
-    .chars = &string.chars[idx1],
-    .len_including_nul = idx2 - idx1
-    };
-
-    return substr;
-}
-
-
-
-bool
-CpAsciiStringView_substring_check(struct CpAsciiStringView string, ssize idx1, ssize idx2) {
-    // Out of bounds check
-    if (idx1 < 0 || idx1 >= string.len_including_nul) return false;
-    if (idx2 < 0 || idx2 >= string.len_including_nul) return false;
-
-    // Source string anomaly check
-    if (!CpAsciiStringView_check_well_formed(string)) return false;
-
-    return true;
-}
-
-// -- substring --------------------------------
-
-
-struct CpAsciiStringView_StringSubstringPair {
-    struct CpAsciiStringView string;
-    struct CpAsciiStringView substring;
-};
-
-bool CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
-    struct CpAsciiStringView_StringSubstringPair);
-
-bool
-CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(
-    struct CpAsciiStringView_StringSubstringPair pair)
-{
-    struct CpAsciiStringView string = pair.string;
-    struct CpAsciiStringView substring = pair.substring;
-
-    if (substring.len_including_nul > string.len_including_nul) return false;
-    for (ssize str_i = 0; str_i < string.len_including_nul; ++str_i) {
-    if (string.chars[str_i] == substring.chars[0]) {
-        for (ssize sub_i = 0;
-         sub_i < substring.len_including_nul && sub_i < substring.len_including_nul;
-         ++sub_i)
-        {
-        char str_char = string.chars[str_i + sub_i];
-        char sub_char = substring.chars[sub_i];
-
-        //printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
-        if (sub_char == '\0') return true;
-        if (str_char != sub_char) return false;
+            //printf("Comparing \'%c\' with \'%c\'\n", str_char, sub_char);
+            if (sub_char == '\0') return true;
+            if (str_char != sub_char) return false;
+            }
         }
+        }
+        return true;
     }
+
+    #define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(...)	\
+        CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked( \
+        (struct CpAsciiStringView_StringSubstringPair) {		\
+            __VA_ARGS__							\
+        })
+
+    // Tests
+    bool
+    cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void);
+    bool
+    cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void) {
+        bool all_ok = true;
+
+        // Tests for intended usage
+        all_ok &= CP_ASSERT(
+            CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
+            .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("DECLARE TestVar: BOOL"),
+            .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("BOOL"))
+        );
+
+        all_ok &= CP_ASSERT(
+            CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
+            .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER"),
+            .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"))
+        );
+
+        // Improper usage: substring longer than original string
+        all_ok &= CP_ASSERT(
+            !CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
+            .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
+            "Obviously long test string"),
+            .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
+            "Obviously longer test string"))
+        );
+
+        return all_ok;
     }
-    return true;
-}
 
-#define CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(...)	\
-    CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked( \
-    (struct CpAsciiStringView_StringSubstringPair) {		\
-        __VA_ARGS__							\
-    })
+    bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b);
+    bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b) {
+        if (a.len_including_nul != b.len_including_nul) return false;
+        ssize len = a.len_including_nul;
 
-// Tests
-bool
-cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void);
-bool
-cp_test_CpAsciiStringView_match_case_sensitive_substring_in_string_unchecked(void) {
-    bool all_ok = true;
-
-    // Tests for intended usage
-    all_ok &= CP_ASSERT(
-        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
-        .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("DECLARE TestVar: BOOL"),
-        .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("BOOL"))
-    );
-
-    all_ok &= CP_ASSERT(
-        CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
-        .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER"),
-        .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED("INTEGER64"))
-    );
-
-    // Improper usage: substring longer than original string
-    all_ok &= CP_ASSERT(
-        !CP_ASCIISTRINGVIEW_MATCH_CASE_SENSITIVE_SUBSTR_IN_STR_UNCHECKED(
-        .string = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
-        "Obviously long test string"),
-        .substring = CP_ASCIISTRINGVIEW_FROM_CONST_CSTR_UNCHECKED(
-        "Obviously longer test string"))
-    );
-
-    return all_ok;
-}
-
-bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b);
-bool CpAsciiStringView_equals(struct CpAsciiStringView a, struct CpAsciiStringView b) {
-    if (a.len_including_nul != b.len_including_nul) return false;
-    ssize len = a.len_including_nul;
-
-    return 0 == memcmp(a.chars, b.chars, len);
+        return 0 == memcmp(a.chars, b.chars, len);
 }*/
 
 #endif
@@ -507,42 +530,6 @@ bool test_tokenizer_enum_member_matches_string(void) {
 // such a procedure could be handled by...
 void cp_parse_statement(int32_t *out_tree, char *in_statement);
 
-struct FatToken {
-    enum TokenKind kind;
-    char *src_mapping_start;
-    int32_t token_len_bytes;
-};
-
-// Tokenizes a string.
-// a better description of its behaviour will be written soon.
-void cp_tokenize(
-    // Input string, assumed to be ASCII.
-    char *str, int32_t str_sz,
-
-    // "token kind" is defined as the offset from g_tokens.
-    int32_t *out_tokkind, int32_t tokkind_sz,
-
-    // "token location" refers to the starting character
-    // index where a token is found.
-    int32_t *out_toklocs, int32_t toklocs_sz
-) {
-    // Maximal munch.
-    // Find longest common subsequence.
-
-    /*
-    ENDPROCEDURE
-    If c is ":
-        lookahead for matching quote. if not found, error.
-        tokenize as string literal, with its start and end markers.
-    If c is ':
-        lookahead for matching quote, if not found, error.
-        tokenize as char literal, with start and end markers.
-        Note: detailed error handling is to be deferred to the parse stage.
-    Does our character have a match? how many matches?
-    if no match, tokenize it as an identifier.
-    */
-}
-
 
 // -- Test arithmetic parser ----
 //
@@ -552,10 +539,10 @@ void cp_tokenize(
 // Expected steps:
 // (1) + (2 + 3)
 // ((1) + 2) + 3
-typedef struct Iter {
-    CP_StringView substr;
+typedef struct Iter1 {
+    CP_StringIncludingZeroTerminator substr;
     int32_t result;
-} Iter;
+} Iter1;
 
 // 1 + 2 + 3
 //       ^
@@ -564,10 +551,10 @@ typedef struct Iter {
 // zero terminated c-string and sized strings
 //
 // I'll stick to the convention (size = (null) terminator - start)
-Iter cp_eval_expr(Iter it)
+Iter1 cp_eval_expr1(Iter1 it)
 {
     const char* end = it.substr.start + it.substr.sz;
-    Iter rv = it;
+    Iter1 rv = it;
 
     printf("Evaluating substring: \"%.*s\"\n", it.substr.sz, it.substr.start);
 
@@ -584,23 +571,23 @@ Iter cp_eval_expr(Iter it)
         --op_loc
     );
     bool op_found = (op_loc != it.substr.start - 1) && (*op_loc == '+');
-    printf("Is op found? %s\n", op_found ? "true" : "false");
+    // printf("Is op found? %s\n", op_found ? "true" : "false");
     if (op_found) {
         // Determine left and right substrings.
-        Iter lt;
+        Iter1 lt;
         lt.substr.start = it.substr.start;
         lt.substr.sz = (op_loc)-lt.substr.start;
-        printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
-        Iter val1 = cp_eval_expr(lt);
+        // printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
+        Iter1 val1 = cp_eval_expr1(lt);
 
-        Iter rt;
+        Iter1 rt;
         rt.substr.start = op_loc + 1;
         rt.substr.sz = (it.substr.start + it.substr.sz) - rt.substr.start;
-        printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
-        Iter val2 = cp_eval_expr(rt);
+        // printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
+        Iter1 val2 = cp_eval_expr1(rt);
 
         rv.result = val1.result + val2.result;
-        printf("lt + rt = %d\n", rv.result);
+        // printf("lt + rt = %d\n", rv.result);
         return rv;
     }
 
@@ -609,20 +596,125 @@ Iter cp_eval_expr(Iter it)
     bool is_num = c >= '0' && c <= '9';
     if (is_num) {
         rv.result = c - '0';
-        printf("Returning terminal int: %d\n", rv.result);
+        // printf("Returning terminal int: %d\n", rv.result);
     } else {
-        printf("number not found, is %c, returning\n", c);
+        // printf("number not found, is %c, returning\n", c);
     }
     return rv;
 }
 
-bool test_cp_eval_expr(void) {
-    Iter test_iter;
-    // test_iter.substr = SVL("1+2+3");
-    // return CP_ASSERT(cp_eval_expr(test_iter).result == 6);
+bool test_cp_eval_expr1(void) {
+    Iter1 test_iter;
+    test_iter.substr = SL("1+2+3+4");
+    return CP_ASSERT(cp_eval_expr1(test_iter).result == 10);
+}
 
-    test_iter.substr = SVL("4+5+9");
-    return CP_ASSERT(cp_eval_expr(test_iter).result == 18);
+
+
+
+
+
+typedef struct Iter2 {
+    CP_StringIncludingZeroTerminator substr;
+    int32_t result;
+} Iter2;
+
+// 1 + 2 + 3
+//       ^
+
+// Infinite recursion possible reason - mismatch b/w
+// zero terminated c-string and sized strings
+//
+// I'll stick to the convention (size = (null) terminator - start)
+//
+// TODO:
+// - Manually implement recursion; 
+//   we need to be able to specify the recursion depth limit
+//   in order to be able to be more deterministic
+// - Categorize the data used by the function in order to figure out what to draw.
+
+/*
+    int fac(int x) {
+        if (x <= 2) return 1;
+        int y = fac(x - 1);
+        return x * y;
+    }
+
+    int x;
+    int *stk, t;
+    void fac(void) {
+    begin:
+        if (x <= 2) goto end;
+        push x - 1;
+        goto begin;
+
+    end:
+        int y = pop;
+        *top = y * x;
+        if (bottom) return;
+        goto end;
+    }
+*/
+int32_t cp_eval_expr2(Iter2 it) {
+    const char *end = it.substr.start + it.substr.sz - 1;
+
+    printf("Evaluating substring: \"%.*s\"\n", it.substr.sz, it.substr.start);
+
+    // Look for operator
+    // If operator found, split.
+    //
+    // Search is done backward so that the termini of the resulting tree
+    // involve the leftmost tokens of the expression.
+    // i.e. expression is evaluated left to right.
+    const char 
+        *op_loc,
+        *ptr_before_string_start = it.substr.start - 1;
+    for (
+        op_loc = end;
+        (*op_loc != '+') && (op_loc >= ptr_before_string_start);
+        --op_loc
+    );
+    bool op_found = (op_loc != ptr_before_string_start) && (*op_loc == '+');
+    // printf("Is op found? %s\n", op_found ? "true" : "false");
+
+    // Recurse
+    if (op_found) {
+        // Determine left and right substrings.
+        Iter2 lt;
+        lt.substr.start = it.substr.start;
+        lt.substr.sz = (op_loc)-lt.substr.start;
+        // printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
+        int32_t val1 = cp_eval_expr2(lt);
+
+        Iter2 rt;
+        rt.substr.start = op_loc + 1;
+        rt.substr.sz = (it.substr.start + it.substr.sz) - rt.substr.start;
+        // printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
+        int32_t val2 = cp_eval_expr2(rt);
+
+        // printf("lt + rt = %d\n", rv.result);
+        return val1 + val2;
+    }
+    
+    // We are at the number
+    else {
+        // If termini found (i.e. *c is a number), return the number.
+        const char c = *it.substr.start;
+        bool is_num = c >= '0' && c <= '9';
+        if (is_num) {
+            // printf("Returning terminal int: %d\n", rv.result);
+            return c - '0';
+        } else {
+            // printf("number not found, is %c, returning\n", c);
+            return c;
+        }
+    }
+}
+
+bool test_cp_eval_expr2(void) {
+    Iter2 test_iter;
+    test_iter.substr = SL("1+2+3+4");
+    return CP_ASSERT(cp_eval_expr2(test_iter) == 10);
 }
 
 // -- Main ----
@@ -632,7 +724,8 @@ bool test_cp_eval_expr(void) {
 int32_t main(int32_t arg_count, char **args) {
     CP_ADD_TEST(test_succeed);
     CP_ADD_TEST(test_tokenizer_enum_member_matches_string);
-    CP_ADD_TEST(test_cp_eval_expr);
+    CP_ADD_TEST(test_cp_eval_expr1);
+    CP_ADD_TEST(test_cp_eval_expr2);
     CP_RUN_TESTS();
 
     return 0;
