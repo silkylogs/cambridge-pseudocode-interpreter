@@ -36,6 +36,22 @@ static bool cp_assert_internal(bool b, const char *b_expression, const char *fil
     CP_ASSERT(EXPR);				\
     BOOL = (EXPR)
 
+// These typedefs are for the convenience of the reader who may not be
+// very proficient with C's declaration syntax.
+//
+// TODO: Maybe explain what the c preprocessor is at this point? or how the decl syntax works?
+#define CP_MutPtrToMut(T)               T *
+#define CP_ConstPtrToMut(T)             T *const
+#define CP_MutPtrToConst(T)             T const *
+#define CP_ConstPtrToConst(T)           T *const *
+#define CP_MutPtrToMutPtrToConst(T)     T const **
+#define CP_MutPtrToConstPtrToConst(T)   T const *const *
+
+typedef CP_MutPtrToMut(char)         MutPtrToMutChar;
+typedef CP_ConstPtrToMut(char)       ConstPtrToMutChar;
+typedef CP_MutPtrToConst(char)       MutPtrToConstChar;
+typedef CP_ConstPtrToConst(char)     ConstPtrToConstChar;
+
 // -- Testing harness ----
 //
 // Allows the programmer to add tests, as well as execute them.
@@ -140,16 +156,20 @@ typedef struct CP_StringIncludingZeroTerminator {
 // An abstraction representing a subset of a string.
 //
 // Contract:
-// - Pointer to start of substring will always be at a lower address than the end pointer.
+// - Pointer to start of substring will always be at a lower or equal address than the end pointer.
 // - The substring points to a valid reigon in memory.
 // - The substring will not include any null terminators.
 
 typedef struct CP_InclusiveUnidirectionalSubstring {
-    char *start, end;
+    char *start, *end;
 } CP_InclusiveUnidirectionalSubstring, CP_SubStr;
 
 #define CP_INCLUSIVE_UNIDIR_SUBSTRING_LITERAL(str) (CP_SubStr){ .start=str, .end=(str + sizeof (str) - 1) }
 #define SUBL(str) CP_INCLUSIVE_UNIDIR_SUBSTRING_LITERAL(str)
+
+int32_t CP_SubStr_size(const CP_SubStr *x) {
+    return x->end - x->start + 1;
+}
 
 // -- from_const_cstr --------------------------
 
@@ -615,8 +635,9 @@ bool test_cp_eval_expr1(void) {
 
 
 typedef struct Iter2 {
-    CP_StringIncludingZeroTerminator substr;
-    int32_t result;
+    CP_InclusiveUnidirectionalSubstring substr;
+    CP_MutPtrToMut(struct Iter2) lt_link;
+    CP_MutPtrToMut(struct Iter2) rt_link;
 } Iter2;
 
 // 1 + 2 + 3
@@ -633,89 +654,188 @@ typedef struct Iter2 {
 //   in order to be able to be more deterministic
 // - Categorize the data used by the function in order to figure out what to draw.
 
+// TODO: tests.
+void cp_find_char_in_unidirectional_substring_linear_reverse(
+    CP_MutPtrToConst(char) str_start,
+    CP_MutPtrToConst(char) str_end,
+    char const c,
+
+    CP_MutPtrToMutPtrToConst(char) out_loc, 
+    CP_ConstPtrToMut(bool) out_found_explicitly
+) {
+    CP_MutPtrToConst(char) op_loc;
+    bool op_found;
+    {
+        CP_ConstPtrToConst(char) ptr_before_string_start = str_start - 1;
+        for (
+            op_loc = str_end;
+            (*op_loc != c) && (op_loc >= ptr_before_string_start);
+            --op_loc
+        );
+        op_found = (op_loc != ptr_before_string_start) && (*op_loc == c);
+    }
+
+    *out_loc = op_loc;
+    *out_found_explicitly = op_found;
+}
+
+void cp_find_char_reverse(
+    CP_InclusiveUnidirectionalSubstring substr,
+    char const c,
+    CP_MutPtrToMutPtrToConst(char) out_loc, 
+    CP_ConstPtrToMut(bool) out_found_explicitly
+){
+    cp_find_char_in_unidirectional_substring_linear_reverse(
+        substr.start, substr.end, c, 
+        out_loc, out_found_explicitly);
+}
+
+char cp_is_char_num(char const c) { return (c >= '0') && (c <= '9'); }
+int32_t cp_char_to_digit(char const c) { return c - '0'; }
+
 /*
-    int fac(int x) {
-        if (x <= 2) return 1;
-        int y = fac(x - 1);
-        return x * y;
-    }
+To make a program recursive, but still have control over the stack, we need to keep track of the data.
 
-    int x;
-    int *stk, t;
-    void fac(void) {
-    begin:
-        if (x <= 2) goto end;
-        push x - 1;
-        goto begin;
+Propagation stage, Backpropagation stage.
 
-    end:
-        int y = pop;
-        *top = y * x;
-        if (bottom) return;
-        goto end;
-    }
+[1 + 2 + 3]
+   -------
+   |     |
+[1 + 2] [3]
+ -----   |
+ |   |   |
+[1] [2] [3]
 */
-int32_t cp_eval_expr2(Iter2 it) {
-    const char *end = it.substr.start + it.substr.sz - 1;
 
-    printf("Evaluating substring: \"%.*s\"\n", it.substr.sz, it.substr.start);
+void cp_build_substr_tree(CP_MutPtrToMut(Iter2) it_stk_top, int32_t it_stk_size, int32_t *out_size) {
+    CP_MutPtrToMut(Iter2) it = it_stk_top;
 
-    // Look for operator
-    // If operator found, split.
-    //
-    // Search is done backward so that the termini of the resulting tree
-    // involve the leftmost tokens of the expression.
-    // i.e. expression is evaluated left to right.
-    const char 
-        *op_loc,
-        *ptr_before_string_start = it.substr.start - 1;
-    for (
-        op_loc = end;
-        (*op_loc != '+') && (op_loc >= ptr_before_string_start);
-        --op_loc
-    );
-    bool op_found = (op_loc != ptr_before_string_start) && (*op_loc == '+');
-    // printf("Is op found? %s\n", op_found ? "true" : "false");
-
-    // Recurse
-    if (op_found) {
-        // Determine left and right substrings.
-        Iter2 lt;
-        lt.substr.start = it.substr.start;
-        lt.substr.sz = (op_loc)-lt.substr.start;
-        // printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
-        int32_t val1 = cp_eval_expr2(lt);
-
-        Iter2 rt;
-        rt.substr.start = op_loc + 1;
-        rt.substr.sz = (it.substr.start + it.substr.sz) - rt.substr.start;
-        // printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
-        int32_t val2 = cp_eval_expr2(rt);
-
-        // printf("lt + rt = %d\n", rv.result);
-        return val1 + val2;
+start:
+    CP_MutPtrToConst(char) split_loc;
+    bool found;
+    cp_find_char_reverse(
+        it->substr, '+',
+        &split_loc, &found);
+    if ((!found) && cp_is_char_num(*(it->substr->start))) {
+        --it;
+        goto start;
     }
-    
-    // We are at the number
+
+not_number:
     else {
-        // If termini found (i.e. *c is a number), return the number.
-        const char c = *it.substr.start;
-        bool is_num = c >= '0' && c <= '9';
-        if (is_num) {
-            // printf("Returning terminal int: %d\n", rv.result);
-            return c - '0';
-        } else {
-            // printf("number not found, is %c, returning\n", c);
-            return c;
+        if (found) {
+            // TODO: validate this.
+            CP_MutPtrToConst(char) 
+                lt_substr_start = it->substr->start,
+                lt_substr_end = split_loc - 1,
+                rt_substr_start = split_loc + 1,
+                rt_substr_end = it->substr->end;
+            
+
         }
     }
 }
 
-bool test_cp_eval_expr2(void) {
-    Iter2 test_iter;
-    test_iter.substr = SL("1+2+3+4");
-    return CP_ASSERT(cp_eval_expr2(test_iter) == 10);
+void cp_eval_expr2(CP_MutPtrToMut(Iter2) it, CP_MutPtrToMut(int32_t) rv) {
+    return 3;
 }
+
+/*
+    void cp_eval_expr2(Iter2 *it, int32_t *rv) {
+        // Locals
+        bool is_num, side_is_lt;
+    start:
+        printf("Evaluating substring: \"%.*s\"\n", CP_SubStr_size(it), it->substr.start);
+
+
+        // Look for operator
+        //
+        // Search is done backward so that the termini of the resulting tree
+        // involve the leftmost tokens of the expression.
+        // i.e. expression is evaluated left to right.
+        //
+        // ( -- )
+
+
+        MutPtrToConstChar op_loc;
+        bool op_found;
+        cp_eval_expr2_find_plus(&op_loc, &op_found);
+
+        // Recurse over left and right substrings
+
+        if (op_found) {
+            // Split left, eval
+        eval_lt:
+            // ( -- it )
+            side_is_lt = true;
+            Iter2 *parent = it;
+            it++;
+            Iter2 *lt = it;
+
+            lt->substr.start = parent->substr.start;
+            lt->substr.end = op_loc - 1;
+            printf("Left substring: \"%.*s\"\n", CP_SubStr_size(lt), lt->substr.start);
+
+            goto start;
+
+            // Split right, eval
+        eval_rt:
+            side_is_lt = false;
+            Iter2 *rt = it;
+            rt->substr.start = op_loc + 1;
+            rt->substr.end = parent->substr.end;
+            printf("Right substring: \"%.*s\"\n", CP_SubStr_size(rt), rt->substr.start);
+
+            goto start;
+
+
+        // ( lt rt -- lt+rt )
+        eval_finished: 
+            rv--;
+            *rv += *(rv + 1);
+        }
+        
+        // We are at the number
+        else {
+            // If termini found (i.e. *c is a number), return the number.
+            char const c = *it_stk[it_top].substr.start;
+            is_num = c >= '0' && c <= '9';
+            if (is_num) {
+                // pop side
+                --it_top;
+
+                // push result
+                rv_stk[rv_top++] = c - '0';
+
+                // goto side
+                if (side_is_lt) goto eval_rt;
+                else            goto eval_finished;
+
+                //return c - '0';
+            } else {
+                printf("panic\n");
+                return c;
+            }
+        }
+
+        return rv_stk[0];
+    }
+*/
+
+bool test_cp_eval_expr2(void) {
+    Iter2 it_stk[0x100];
+    int32_t it_top = 0;
+    int32_t rv_stk[0x8];
+    int32_t rv_top = 0;
+
+    Iter2 *test_iter = it_stk;
+    test_iter->substr = SUBL("1+2+3+4");
+    
+    cp_eval_expr2(test_iter, rv);
+    
+    return CP_ASSERT(rv[0] == 10);
+}
+
 
 // -- Main ----
 //
