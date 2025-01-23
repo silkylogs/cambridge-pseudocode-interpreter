@@ -11,7 +11,7 @@ project "CambridgePseudocodeInterpreter"
    kind "ConsoleApp"
    language "C"
    cdialect "c99"
-   warnings "Everything"
+   warnings "High"
    
    targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
    objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")   
@@ -21,7 +21,7 @@ project "CambridgePseudocodeInterpreter"
 
    filter "system:windows"
        warnings "Extra"
-       cdialect "c99"
+       cdialect "C99"
 
    filter "system:linux"
    -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
