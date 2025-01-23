@@ -679,6 +679,7 @@ bool test_cp_eval_expr2(void) {
     return CP_ASSERT(cp_eval_expr2(test_iter, it_stk) == 10);
 }
 
+#include "raylib.h"
 
 // -- Main ----
 //
@@ -689,6 +690,22 @@ int32_t main(int32_t arg_count, char **args) {
     CP_ADD_TEST(test_tokenizer_enum_member_matches_string);
     CP_ADD_TEST(test_cp_eval_expr2);
     CP_RUN_TESTS();
+
+    InitWindow(800, 800, "raylib [core] example - basic window");
+
+    SetTargetFPS(60);
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+
+            ClearBackground(RAYWHITE);
+
+            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+
+        EndDrawing();
+    }
+
+    CloseWindow();        
 
     return 0;
 }

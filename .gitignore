@@ -1,3 +1,7 @@
+# The entirety of the third_party subdirectory.
+# For reasons, see premake5.lua
+third_party/*
+
 # Build files
 *.sln
 *.vcxproj*

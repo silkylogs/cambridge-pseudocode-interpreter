@@ -14,10 +14,12 @@ project "CambridgePseudocodeInterpreter"
    warnings "High"
    
    targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
-   objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")   
-   files {
-       "main.c"
-   } 
+   objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")
+   files { "main.c" }
+   -- Note: Place your raylib folder inside the third_party directory.
+   libdirs { "third_party/raylib-5.0_win64_msvc16/lib" }
+   includedirs { "third_party/raylib-5.0_win64_msvc16/include" }
+   links { "raylib", "raylibdll", "Gdi32", "shell32", "WinMM" }
 
    filter "system:windows"
        warnings "Extra"
