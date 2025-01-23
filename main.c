@@ -705,135 +705,98 @@ Propagation stage, Backpropagation stage.
  -----   |
  |   |   |
 [1] [2] [3]
+
+
+Expected action trace:
+string: 1+2+3
+plus found
+not terminal
+push rt substr to return stack (rs = 3)
+string = lt substr
+
+string: 1+2
+plus found
+not terminal
+push lt substr to return stack (rs = 3 2)
+string = lt substr
+
+string: 1
+no plus found
+is terminal
+conv and add to accumulator (1)
+string = pop (rs = 3)
+
+string: 2
+no plus found
+is terminal
+conv and add to accumulator (2)
+string = pop (rs empty)
+
+string: 3
+no plus foundd
+is terminal
+conv and add to acc (6)
+rs is empty
+return acc.
 */
 
-void cp_build_substr_tree(CP_MutPtrToMut(Iter2) it_stk_top, int32_t it_stk_size, int32_t *out_size) {
-    CP_MutPtrToMut(Iter2) it = it_stk_top;
+int32_t cp_eval_expr2(
+    Iter2 str,
+    CP_MutPtrToMut(Iter2) rst // return stack top
+) {
+    Iter2 const *rst_base = rst;
+    int32_t acc = 0;
 
 start:
-    CP_MutPtrToConst(char) split_loc;
+    printf("Evaluating: %.*s\n", CP_SubStr_size(&str.substr), str.substr.start);
+
+    char const *split_loc;
     bool found;
     cp_find_char_reverse(
-        it->substr, '+',
+        str.substr, '+',
         &split_loc, &found);
-    if ((!found) && cp_is_char_num(*(it->substr->start))) {
-        --it;
-        goto start;
-    }
-
-not_number:
-    else {
+        
+    // Is terminal?
+    if ((!found) && cp_is_char_num(*str.substr.start)) {
+        if (rst < rst_base) { // Stack empty
+            // printf("Returning acc (rst < rst_base) = %d\n", acc);
+            return acc;
+        } else if (rst == rst_base) { // Last elem in stack
+            acc += cp_char_to_digit(*str.substr.start);
+            // printf("Returning acc (rst == rst_base): %d\n", acc);
+            return acc;
+        } else { // Multiple elems in stack
+            acc += cp_char_to_digit(*str.substr.start);
+            // printf("Acc: %d\n", acc);
+            str = *rst;
+            --rst; // Pop
+            goto start;
+        }
+    } else {
         if (found) {
             // TODO: validate this.
-            CP_MutPtrToConst(char) 
-                lt_substr_start = it->substr->start,
-                lt_substr_end = split_loc - 1,
-                rt_substr_start = split_loc + 1,
-                rt_substr_end = it->substr->end;
+            Iter2 lt, rt;
+            lt.substr.start = str.substr.start;
+            lt.substr.end = split_loc - 1;
+            rt.substr.start =  split_loc + 1;
+            rt.substr.end = str.substr.end;
+
+            // Push rt
+            ++rst;
+            *rst = rt;
             
-
+            str = lt;
+            goto start;
         }
     }
 }
-
-void cp_eval_expr2(CP_MutPtrToMut(Iter2) it, CP_MutPtrToMut(int32_t) rv) {
-    return 3;
-}
-
-/*
-    void cp_eval_expr2(Iter2 *it, int32_t *rv) {
-        // Locals
-        bool is_num, side_is_lt;
-    start:
-        printf("Evaluating substring: \"%.*s\"\n", CP_SubStr_size(it), it->substr.start);
-
-
-        // Look for operator
-        //
-        // Search is done backward so that the termini of the resulting tree
-        // involve the leftmost tokens of the expression.
-        // i.e. expression is evaluated left to right.
-        //
-        // ( -- )
-
-
-        MutPtrToConstChar op_loc;
-        bool op_found;
-        cp_eval_expr2_find_plus(&op_loc, &op_found);
-
-        // Recurse over left and right substrings
-
-        if (op_found) {
-            // Split left, eval
-        eval_lt:
-            // ( -- it )
-            side_is_lt = true;
-            Iter2 *parent = it;
-            it++;
-            Iter2 *lt = it;
-
-            lt->substr.start = parent->substr.start;
-            lt->substr.end = op_loc - 1;
-            printf("Left substring: \"%.*s\"\n", CP_SubStr_size(lt), lt->substr.start);
-
-            goto start;
-
-            // Split right, eval
-        eval_rt:
-            side_is_lt = false;
-            Iter2 *rt = it;
-            rt->substr.start = op_loc + 1;
-            rt->substr.end = parent->substr.end;
-            printf("Right substring: \"%.*s\"\n", CP_SubStr_size(rt), rt->substr.start);
-
-            goto start;
-
-
-        // ( lt rt -- lt+rt )
-        eval_finished: 
-            rv--;
-            *rv += *(rv + 1);
-        }
-        
-        // We are at the number
-        else {
-            // If termini found (i.e. *c is a number), return the number.
-            char const c = *it_stk[it_top].substr.start;
-            is_num = c >= '0' && c <= '9';
-            if (is_num) {
-                // pop side
-                --it_top;
-
-                // push result
-                rv_stk[rv_top++] = c - '0';
-
-                // goto side
-                if (side_is_lt) goto eval_rt;
-                else            goto eval_finished;
-
-                //return c - '0';
-            } else {
-                printf("panic\n");
-                return c;
-            }
-        }
-
-        return rv_stk[0];
-    }
-*/
 
 bool test_cp_eval_expr2(void) {
     Iter2 it_stk[0x100];
-    int32_t it_top = 0;
-    int32_t rv_stk[0x8];
-    int32_t rv_top = 0;
-
-    Iter2 *test_iter = it_stk;
-    test_iter->substr = SUBL("1+2+3+4");
+    Iter2 test_iter;
+    test_iter.substr = SUBL("1+2+3+4");
     
-    cp_eval_expr2(test_iter, rv);
-    
-    return CP_ASSERT(rv[0] == 10);
+    return CP_ASSERT(cp_eval_expr2(test_iter, it_stk) == 10);
 }
 
 
