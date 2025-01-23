@@ -36,21 +36,8 @@ static bool cp_assert_internal(bool b, const char *b_expression, const char *fil
     CP_ASSERT(EXPR);				\
     BOOL = (EXPR)
 
-// These typedefs are for the convenience of the reader who may not be
-// very proficient with C's declaration syntax.
-//
-// TODO: Maybe explain what the c preprocessor is at this point? or how the decl syntax works?
-#define CP_MutPtrToMut(T)               T *
-#define CP_ConstPtrToMut(T)             T *const
-#define CP_MutPtrToConst(T)             T const *
-#define CP_ConstPtrToConst(T)           T *const *
-#define CP_MutPtrToMutPtrToConst(T)     T const **
-#define CP_MutPtrToConstPtrToConst(T)   T const *const *
-
-typedef CP_MutPtrToMut(char)         MutPtrToMutChar;
-typedef CP_ConstPtrToMut(char)       ConstPtrToMutChar;
-typedef CP_MutPtrToConst(char)       MutPtrToConstChar;
-typedef CP_ConstPtrToConst(char)     ConstPtrToConstChar;
+// A helpful link for getting to understand C's pointer syntax
+// https://cseweb.ucsd.edu/~gbournou/CSE131/rt_lt.rule.html
 
 // -- Testing harness ----
 //
@@ -527,118 +514,11 @@ bool test_tokenizer_enum_member_matches_string(void) {
         1;
 }
 
-// In order to have a map of the source code that is trivially traversable, backtracking included,
-// We will need to store it as a flat array of tokens.
-// The scheme of how such a mapping could look like is demonstrated as follows:
-// ```
-// 00 // I'm pretty sure this language disallows arrays as a valid type to a procedure parameter
-// 00 PROCEDURE Sum3Nums(BYREF Arr: StructWith3NumsT)
-// 01   OUTPUT "Numbers to add:", Arr.v0, Arr.v1, Arr.v2
-// 02   OUTPUT "Their sum is:" Arr.v0 + Arr.v1 + Arr.v2
-// 03 ENDPROCEDURE
-// ```
-//
-// LINE0 PROCEDURE Sum3Nums ( BYREF Arr : StructWithThreeNumsT ) NL
-//
-// on second thought, backtracking doesnt seem worth it if it's only goal is to be conveniently able to deliver good error messages.
-// we're only going to be consuming tokens in the forward direction
-//
-// to impose the guarantee of our parser beginning at a statement,
-// we should define the keywords that are guaranteed to be present at the beginning of a statement and then check
-// against them. orienting our problem in terms of handling a sequence of statements will increase implementation speed.
-//
-// such a procedure could be handled by...
-void cp_parse_statement(int32_t *out_tree, char *in_statement);
-
-
-// -- Test arithmetic parser ----
-//
-// Instead of falling into the trap of writing the perfect abstraction first,
-// I'm going to write something trivial, then expand it from there.
-// Test example: 1+2+3
-// Expected steps:
-// (1) + (2 + 3)
-// ((1) + 2) + 3
-typedef struct Iter1 {
-    CP_StringIncludingZeroTerminator substr;
-    int32_t result;
-} Iter1;
-
-// 1 + 2 + 3
-//       ^
-
-// Infinite recursion possible reason - mismatch b/w
-// zero terminated c-string and sized strings
-//
-// I'll stick to the convention (size = (null) terminator - start)
-Iter1 cp_eval_expr1(Iter1 it)
-{
-    const char* end = it.substr.start + it.substr.sz;
-    Iter1 rv = it;
-
-    printf("Evaluating substring: \"%.*s\"\n", it.substr.sz, it.substr.start);
-
-    // Look for operator
-    // If operator found, split.
-    //
-    // Search is done backward so that the termini of the resulting tree
-    // involve the leftmost tokens of the expression.
-    // i.e. expression is evaluated left to right.
-    const char* op_loc;
-    for (
-        op_loc = end - 1;
-        *op_loc != '+' && op_loc >= it.substr.start - 1;
-        --op_loc
-    );
-    bool op_found = (op_loc != it.substr.start - 1) && (*op_loc == '+');
-    // printf("Is op found? %s\n", op_found ? "true" : "false");
-    if (op_found) {
-        // Determine left and right substrings.
-        Iter1 lt;
-        lt.substr.start = it.substr.start;
-        lt.substr.sz = (op_loc)-lt.substr.start;
-        // printf("Left substring: \"%.*s\"\n", lt.substr.sz, lt.substr.start);
-        Iter1 val1 = cp_eval_expr1(lt);
-
-        Iter1 rt;
-        rt.substr.start = op_loc + 1;
-        rt.substr.sz = (it.substr.start + it.substr.sz) - rt.substr.start;
-        // printf("Right substring: \"%.*s\"\n", rt.substr.sz, rt.substr.start);
-        Iter1 val2 = cp_eval_expr1(rt);
-
-        rv.result = val1.result + val2.result;
-        // printf("lt + rt = %d\n", rv.result);
-        return rv;
-    }
-
-    // If termini found (i.e. *c is a number), return the number.
-    const char c = *it.substr.start;
-    bool is_num = c >= '0' && c <= '9';
-    if (is_num) {
-        rv.result = c - '0';
-        // printf("Returning terminal int: %d\n", rv.result);
-    } else {
-        // printf("number not found, is %c, returning\n", c);
-    }
-    return rv;
-}
-
-bool test_cp_eval_expr1(void) {
-    Iter1 test_iter;
-    test_iter.substr = SL("1+2+3+4");
-    return CP_ASSERT(cp_eval_expr1(test_iter).result == 10);
-}
-
-
-
-
-
-
-typedef struct Iter2 {
+typedef struct Iter2 Iter2;
+struct Iter2 {
     CP_InclusiveUnidirectionalSubstring substr;
-    CP_MutPtrToMut(struct Iter2) lt_link;
-    CP_MutPtrToMut(struct Iter2) rt_link;
-} Iter2;
+    Iter2 *lt_link, *rt_link;
+};
 
 // 1 + 2 + 3
 //       ^
@@ -656,17 +536,17 @@ typedef struct Iter2 {
 
 // TODO: tests.
 void cp_find_char_in_unidirectional_substring_linear_reverse(
-    CP_MutPtrToConst(char) str_start,
-    CP_MutPtrToConst(char) str_end,
+    char const *str_start,
+    char const *str_end,
     char const c,
 
-    CP_MutPtrToMutPtrToConst(char) out_loc, 
-    CP_ConstPtrToMut(bool) out_found_explicitly
+    char const **out_loc, 
+    bool *out_found_explicitly
 ) {
-    CP_MutPtrToConst(char) op_loc;
+    char const *op_loc;
     bool op_found;
     {
-        CP_ConstPtrToConst(char) ptr_before_string_start = str_start - 1;
+        char const *const ptr_before_string_start = str_start - 1;
         for (
             op_loc = str_end;
             (*op_loc != c) && (op_loc >= ptr_before_string_start);
@@ -682,8 +562,8 @@ void cp_find_char_in_unidirectional_substring_linear_reverse(
 void cp_find_char_reverse(
     CP_InclusiveUnidirectionalSubstring substr,
     char const c,
-    CP_MutPtrToMutPtrToConst(char) out_loc, 
-    CP_ConstPtrToMut(bool) out_found_explicitly
+    char const **out_loc, 
+    bool *out_found_explicitly
 ){
     cp_find_char_in_unidirectional_substring_linear_reverse(
         substr.start, substr.end, c, 
@@ -694,61 +574,61 @@ char cp_is_char_num(char const c) { return (c >= '0') && (c <= '9'); }
 int32_t cp_char_to_digit(char const c) { return c - '0'; }
 
 /*
-To make a program recursive, but still have control over the stack, we need to keep track of the data.
+    To make a program recursive, but still have control over the stack, we need to keep track of the data.
 
-Propagation stage, Backpropagation stage.
+    Propagation stage, Backpropagation stage.
 
-[1 + 2 + 3]
-   -------
-   |     |
-[1 + 2] [3]
- -----   |
- |   |   |
-[1] [2] [3]
+    [1 + 2 + 3]
+    -------
+    |     |
+    [1 + 2] [3]
+    -----   |
+    |   |   |
+    [1] [2] [3]
 
 
-Expected action trace:
-string: 1+2+3
-plus found
-not terminal
-push rt substr to return stack (rs = 3)
-string = lt substr
+    Expected action trace:
+    string: 1+2+3
+    plus found
+    not terminal
+    push rt substr to return stack (rs = 3)
+    string = lt substr
 
-string: 1+2
-plus found
-not terminal
-push lt substr to return stack (rs = 3 2)
-string = lt substr
+    string: 1+2
+    plus found
+    not terminal
+    push lt substr to return stack (rs = 3 2)
+    string = lt substr
 
-string: 1
-no plus found
-is terminal
-conv and add to accumulator (1)
-string = pop (rs = 3)
+    string: 1
+    no plus found
+    is terminal
+    conv and add to accumulator (1)
+    string = pop (rs = 3)
 
-string: 2
-no plus found
-is terminal
-conv and add to accumulator (2)
-string = pop (rs empty)
+    string: 2
+    no plus found
+    is terminal
+    conv and add to accumulator (2)
+    string = pop (rs empty)
 
-string: 3
-no plus foundd
-is terminal
-conv and add to acc (6)
-rs is empty
-return acc.
+    string: 3
+    no plus foundd
+    is terminal
+    conv and add to acc (6)
+    rs is empty
+    return acc.
 */
 
 int32_t cp_eval_expr2(
     Iter2 str,
-    CP_MutPtrToMut(Iter2) rst // return stack top
+    Iter2 *rst // return stack top
 ) {
     Iter2 const *rst_base = rst;
     int32_t acc = 0;
 
 start:
-    printf("Evaluating: %.*s\n", CP_SubStr_size(&str.substr), str.substr.start);
+    // printf("Evaluating: %.*s\n", CP_SubStr_size(&str.substr), str.substr.start);
 
     char const *split_loc;
     bool found;
@@ -807,7 +687,6 @@ bool test_cp_eval_expr2(void) {
 int32_t main(int32_t arg_count, char **args) {
     CP_ADD_TEST(test_succeed);
     CP_ADD_TEST(test_tokenizer_enum_member_matches_string);
-    CP_ADD_TEST(test_cp_eval_expr1);
     CP_ADD_TEST(test_cp_eval_expr2);
     CP_RUN_TESTS();
 
