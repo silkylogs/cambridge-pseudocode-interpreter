@@ -679,33 +679,223 @@ bool test_cp_eval_expr2(void) {
     return CP_ASSERT(cp_eval_expr2(test_iter, it_stk) == 10);
 }
 
+// -- Raylib Backend ----
+//
+// The raylib interface.
+
 #include "raylib.h"
+
+void cprb_setup(void) {
+    InitWindow(800, 800, "Expression evaluation visualizer");
+    SetTargetFPS(60);
+}
+
+bool cprb_running(void) {
+    return !WindowShouldClose();
+}
+
+void cprb_draw_centered_box_with_text(
+    int32_t const cx, 
+    int32_t const cy, 
+    int32_t const padding, 
+    char const *text
+) {
+    int32_t const fntsz = 20; 
+
+    int32_t const text_w = MeasureText(text, fntsz);
+    int32_t const text_h = fntsz;
+    // Assuming (0, 0) is top left corner of screen.
+    // (centered_x, centered_y) -> (upper_left_x, upper_left_y)
+    int32_t const text_ulx = cx - (text_w / 2);
+    int32_t const text_uly = cy - (text_h / 2);
+
+    int32_t const box_w = text_w + (padding * 2);
+    int32_t const box_h = text_h;
+    int32_t const box_ulx = text_ulx - padding;
+    int32_t const box_uly = text_uly;
+
+    DrawRectangleLines(box_ulx, box_uly, box_w, box_h, BLACK);
+    DrawText(text, text_ulx, text_uly, fntsz, BLACK);
+};
+
+typedef struct CP_CenteredBoxedText CP_BoxedText;
+struct CP_CenteredBoxedText {
+    int32_t cx, cy;
+    int32_t padding;
+    char const *text;
+};
+
+void (box)(CP_BoxedText b) {
+    cprb_draw_centered_box_with_text(b.cx, b.cy, b.padding, b.text);
+}
+
+void cprb_draw_centered_line_between_boxes(CP_BoxedText src, CP_BoxedText dst) {
+    DrawLine(src.cx, src.cy, dst.cx, dst.cy, LIGHTGRAY);
+}
+
+typedef struct CP_BoxedTextBTreeNode CP_TextNode;
+struct CP_BoxedTextBTreeNode {
+    CP_BoxedText btxt;
+    CP_TextNode *lt, *rt;
+};
+
+// A test
+CP_TextNode *generate_tree(void) {
+    static CP_TextNode tree_data[5] = {0};
+    static char n0[] = "+";
+    static char n1[] = "3";
+    static char n2[] = "+";
+    static char n3[] = "2";
+    static char n4[] = "1";
+    int32_t const padding = 2;
+
+    // Modelling 1+2+3 (+ 3 (+ 2 1)) (op l r)
+    CP_TextNode *ptr;
+    
+    ptr = tree_data + 0;
+    ptr->btxt.text = n0;
+    ptr->btxt.cy = 100;
+    ptr->btxt.cx = 100;
+    ptr->btxt.padding = padding;
+    ptr->lt = tree_data + 1;
+    ptr->rt = tree_data + 2;
+    
+    ptr = tree_data + 1;
+    ptr->btxt.text = n1;
+    ptr->btxt.cy = 200;
+    ptr->btxt.cx = 100;
+    ptr->btxt.padding = padding;
+    ptr->lt = NULL;
+    ptr->rt = NULL;
+    
+    ptr = tree_data + 2;
+    ptr->btxt.text = n2;
+    ptr->btxt.cy = 200;
+    ptr->btxt.cx = 200;
+    ptr->btxt.padding = padding;
+    ptr->lt = tree_data + 3;
+    ptr->rt = tree_data + 4;
+
+    ptr = tree_data + 3;
+    ptr->btxt.text = n3;
+    ptr->btxt.cy = 300;
+    ptr->btxt.cx = 200;
+    ptr->btxt.padding = padding;
+    ptr->lt = NULL;
+    ptr->rt = NULL;
+
+    ptr = tree_data + 4;
+    ptr->btxt.text = n4;
+    ptr->btxt.cy = 300;
+    ptr->btxt.cx = 300;
+    ptr->btxt.padding = padding;
+    ptr->lt = NULL;
+    ptr->rt = NULL;
+
+    return tree_data;
+}
+
+void draw_tree_iter(CP_TextNode *node) {
+    if (node) {
+        box(node->btxt);
+        if (node->lt) cprb_draw_centered_line_between_boxes(node->btxt, node->lt->btxt);
+        if (node->rt) cprb_draw_centered_line_between_boxes(node->btxt, node->rt->btxt);
+    }
+}
+
+void draw_tree(CP_TextNode *root) {
+    if (!root) return;
+    draw_tree_iter(root);
+    draw_tree(root->lt);
+    draw_tree(root->rt);
+}
+
+bool is_leaf(CP_TextNode *tree_root) {
+    return tree_root->lt == NULL && tree_root->rt == NULL;
+}
+
+bool is_penultimate(CP_TextNode *root) {
+    if (!root) return false;
+    return is_leaf(root)?
+        false :
+        is_leaf(root->lt) && is_leaf(root->rt);
+}
+
+CP_TextNode *find_penultimate(CP_TextNode *root) {
+    if (!root) return NULL;
+    if (is_penultimate(root)) return root;
+    
+    CP_TextNode* lt = find_penultimate(root->lt);
+    CP_TextNode* rt = find_penultimate(root->rt);
+
+    if (rt) return rt;
+    else if (lt) return lt;
+    else return NULL;
+}
+
+
 
 // -- Main ----
 //
 // The place where program execution starts.
 
-int32_t main(int32_t arg_count, char **args) {
+int32_t main(int32_t arg_count, char const *const *args) {
     CP_ADD_TEST(test_succeed);
     CP_ADD_TEST(test_tokenizer_enum_member_matches_string);
     CP_ADD_TEST(test_cp_eval_expr2);
     CP_RUN_TESTS();
 
-    InitWindow(800, 800, "raylib [core] example - basic window");
+    cprb_setup();
 
-    SetTargetFPS(60);
-    while (!WindowShouldClose())
+    // ToggleBorderlessWindowed();
+
+    CP_TextNode *tree_root = generate_tree();
+    // add_tree(tree_root);
+
+    while (cprb_running())
     {
+        double const pausedur = 2.0;
+        enum State { PAUSED, ANIMATING };
+        static int32_t s = PAUSED;
+        static CP_TextNode *pn;
+
+        printf("State: %s\n", s==PAUSED? "PAUSED" : "ANIMATING");
+        switch (s) {
+            case PAUSED: {
+                WaitTime(pausedur);
+                s = ANIMATING;
+            } break;
+            case ANIMATING: {
+                // collapse_leaf(tree);
+                pn = find_penultimate(tree_root);
+
+                pn->lt->btxt.cx = pn->btxt.cx + (((pn->lt->btxt.cx - pn->btxt.cx) * (0.99 * 1000)) / 1000);
+                pn->lt->btxt.cy = pn->btxt.cy + (((pn->lt->btxt.cy - pn->btxt.cy) * (0.99 * 1000)) / 1000);
+                pn->rt->btxt.cx = pn->btxt.cx + (((pn->rt->btxt.cx - pn->btxt.cx) * (0.99 * 1000)) / 1000);
+                pn->rt->btxt.cy = pn->btxt.cy + (((pn->rt->btxt.cy - pn->btxt.cy) * (0.99 * 1000)) / 1000);
+
+                if (   pn->lt->btxt.cx == pn->btxt.cx 
+                    && pn->lt->btxt.cy == pn->btxt.cy
+                    && pn->rt->btxt.cx == pn->btxt.cx 
+                    && pn->rt->btxt.cy == pn->btxt.cy)
+                {
+                    int32_t lt = *pn->lt->btxt.text - '0';
+                    int32_t rt = *pn->rt->btxt.text - '0';
+                    *(char*)pn->btxt.text = '0' + lt + rt;
+                    pn->rt = NULL;
+                    pn->lt = NULL;
+                    s = PAUSED;
+                }
+            } break;
+        }
+
         BeginDrawing();
-
-            ClearBackground(RAYWHITE);
-
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
-
+        ClearBackground(RAYWHITE);
+        draw_tree(tree_root);
         EndDrawing();
     }
 
-    CloseWindow();        
+    CloseWindow();
 
     return 0;
 }

@@ -22,27 +22,38 @@ project "CambridgePseudocodeInterpreter"
    links { "raylib", "raylibdll", "Gdi32", "shell32", "WinMM" }
 
    filter "system:windows"
-       warnings "Extra"
-       cdialect "C99"
+      warnings "Everything"
+      cdialect "C99"
+      fatalwarnings {
+         4020, -- Too many arguments
+         4024, -- different types for formal and actual parameter
+         4047, -- T differs in levels of indirection
+      }
+      disablewarnings {
+         4777, -- 'printf' : format string
+         4820, -- padding added after data member
+         5045, -- Compiler will insert Spectre mitigation for memory load
+         4100, -- unreferenced formal parameter
+      }
 
    filter "system:linux"
    -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
-       warnings "Extra"
-       fatalwarnings {
-          "write-strings",
-          "strict-prototypes",
-          "missing-prototypes",
-          "missing-declarations",
-          "sign-compare",
-          "logical-op",
-          "type-limits",
-          "suggest-attribute=pure",
-          "suggest-attribute=const",
-          "suggest-attribute=noreturn",
-          "suggest-attribute=format",
-          "format-nonliteral",
-          "error=vla",
-       }  
+      warnings "Extra"
+      fatalwarnings {
+         "write-strings",
+         "strict-prototypes",
+         "missing-prototypes",
+         "missing-declarations",
+         "sign-compare",
+         "logical-op",
+         "type-limits",
+         "suggest-attribute=pure",
+         "suggest-attribute=const",
+         "suggest-attribute=noreturn",
+         "suggest-attribute=format",
+         "format-nonliteral",
+         "error=vla",
+      }
 
    filter "configurations:Debug"
        symbols "On"
