@@ -833,7 +833,238 @@ CP_TextNode *find_penultimate(CP_TextNode *root) {
     else return NULL;
 }
 
+// -- Forth ----
+//
+// The internal forth implementation, intended to make development easier.
+//
 
+typedef uintptr_t Cell;
+
+// "Quits" to the top level interpreter, clearing the stack
+void quit(void);
+
+// Stack
+//
+// Usage:
+
+// Returns the top of the data stack, or quits to interpreter immediately
+Cell top(void);
+
+
+// Usage:
+// To compile `: double dup + ;`, then execute `5 double .`,
+// ```
+// colon("double");
+// doword("dup");
+// doword("+");
+// semicolon();
+// ```
+//
+
+// Start compiling the definition of a word
+void colon(char const *const word);
+
+// Finish compiling a word
+void semicolon(void);
+
+
+// Top level interpreter
+//
+// Pass a word to the interpreter to either compile or execute it.
+//
+// Usage:
+// ```
+// doword("5");
+// doword("5");
+// doword("+");
+// doword("."); // Prints 10
+// ```
+
+
+#define CTX_MEM_SZ 0x100
+#define CTX_STRBUF_SZ 0x100
+#define CTX_PRIM_SZ 0x100
+typedef struct Context Ctx;
+typedef void (*PrimitiveFunction)(Ctx *);
+struct Context {
+    Cell
+        mem[CTX_MEM_SZ],
+        latest, head,
+        top, rtop,
+        ip,
+        dummy;
+    
+    char
+        strbuf[CTX_STRBUF_SZ], // Containing buffer
+        *(strs[CTX_STRBUF_SZ]); // Ptr to zero terminated strings
+    Cell strtop;
+
+    enum State {
+        STATE_INTERPRETING,
+        STATE_COMPILING,
+        STATE_QUIT,
+    } state;
+
+    PrimitiveFunction primitives[CTX_PRIM_SZ];
+    Cell primtop;
+};
+Ctx ctx = {0};
+
+enum DictEntry {
+    ENTRY_OFFSET_NEXT,
+    ENTRY_OFFSET_FHIDDEN,
+    ENTRY_OFFSET_FIMMED,
+    ENTRY_OFFSET_CODEWORD,
+    ENTRY_SIZE,
+};
+Cell entry_next(Cell const addr) { return addr + ENTRY_OFFSET_NEXT; }
+Cell entry_fhidden(Cell const addr) { return addr + ENTRY_OFFSET_FHIDDEN; }
+Cell entry_fimmed(Cell const addr) { return addr + ENTRY_OFFSET_FIMMED; }
+Cell entry_codeword(Cell const addr) { return addr + ENTRY_OFFSET_CODEWORD; }
+
+Cell latest(void) {
+    return ctx.latest;
+}
+
+Cell latest(void);
+Cell entry_codeword(Cell const addr);
+Cell entry_next(Cell const addr);
+Cell dictcontains(char const *const word) {
+    Cell addr = latest();
+    do {
+        // TODO: checked memory access, that throws an exception/quits
+        if (0 == strcmp(word, ctx.strs[entry_codeword(addr)])) return addr;
+        addr = entry_next(addr);
+    } while (addr);
+    return addr;
+}
+
+bool isnum(char const *const word) {
+    // Return value:
+    // Number of receiving arguments successfully assigned 
+    // (which may be zero in case a matching failure occurred 
+    // before the first receiving argument was assigned), 
+    // or EOF if input failure occurs before the first receiving argument was assigned.
+    int32_t dummy;
+    int32_t rv = sscanf(word, "%d", &dummy);
+    if (rv == 1) return true;
+    if (rv == 0 || rv == EOF) return false;
+    return false;
+}
+
+void push(Cell const num) {
+    ctx.top++;
+    ctx.mem[ctx.top] = num;
+}
+
+void push(Cell const num);
+void lit(Cell const num) {
+    push(num);
+}
+
+Cell conv2num(char const *const word) {
+    return atoll(word);
+}
+
+bool isprimitive(Cell const addr) {}
+
+void next(void) {
+    ctx.ip = ctx.mem[ctx.rtop];
+    ctx.rtop--;
+}
+
+void next(void);
+void execprimitive(Cell const prim_idx) {
+    (ctx.primitives[prim_idx])(&ctx);
+    next();
+}
+
+void rpush(Cell const num) {
+    ctx.mem[ctx.rtop + 1] = num;
+    ctx.rtop++;
+}
+
+void rpush(Cell const num);
+void execnonprimitive(Cell const addr) {
+    rpush(ctx.ip + 1);
+    ctx.ip = ctx.mem[ctx.ip];
+}
+
+void allot(Cell const cells) {
+    ctx.head += cells;
+}
+
+void allot(Cell const);
+void comma(Cell const addr) {
+    ctx.mem[ctx.head] = addr;
+    allot(1);
+}
+
+bool isprimitive(Cell const addr);
+void execprimitive(Cell const addr);
+void execnonprimitive(Cell const addr);
+void comma(Cell const addr);
+void exec(Cell const addr) {
+    if (ctx.state == STATE_INTERPRETING) {
+        if (isprimitive(addr)) execprimitive(addr);
+        else execnonprimitive(addr);
+    } else if (ctx.state == STATE_COMPILING) {
+        comma(addr);
+    }
+}
+
+void drop(void) {
+    ctx.top = 0;
+}
+
+void rdrop(void) {
+    ctx.rtop = 0;
+}
+
+void drop(void);
+void rdrop(void);
+void quit(void) {
+    drop();
+    rdrop();
+    ctx.state = STATE_QUIT;
+}
+
+
+void quit(void);
+Cell dictcontains(char const *const word);
+void exec(Cell const);
+bool isnum(char const *const word);
+void lit(Cell const);
+Cell conv2num(char const *const word);
+void error(char const *const str);
+void quit(void);
+void doword(char const *const word) {
+    Cell addr = dictcontains(word);
+    if (addr) {
+        exec(addr);
+    } else {
+        if (isnum(word)) {
+            lit(conv2num(word));
+        } else {
+            printf("Word %s not found", word);
+            quit();
+        }
+    }
+}
+
+void init(void) {
+    // Init dict
+}
+
+Cell top(void) {
+    return ctx.mem[ctx.top];
+}
+
+bool test_forth(void) {
+    init();
+    doword("5");
+    return top() == 5;
+}
 
 // -- Main ----
 //
@@ -843,6 +1074,7 @@ int32_t main(int32_t arg_count, char const *const *args) {
     CP_ADD_TEST(test_succeed);
     CP_ADD_TEST(test_tokenizer_enum_member_matches_string);
     CP_ADD_TEST(test_cp_eval_expr2);
+    CP_ADD_TEST(test_forth);
     CP_RUN_TESTS();
 
     cprb_setup();
