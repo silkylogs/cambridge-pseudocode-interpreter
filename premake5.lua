@@ -25,9 +25,14 @@ project "CambridgePseudocodeInterpreter"
       warnings "Everything"
       cdialect "C99"
       fatalwarnings {
-         4020, -- Too many arguments
-         4024, -- different types for formal and actual parameter
+         4020, -- Function has too many arguments
+         4024, -- Different types for formal and actual parameter
          4047, -- T differs in levels of indirection
+         4131, -- Function uses old-style declarator
+         4473, -- Function has not enough arguments passed for format string
+         4131, -- Function uses old-style declarator
+         4477, -- Mismatched format string and variadic argument type
+         4052, -- function declarations different; one contains variable arguments
       }
       disablewarnings {
          4777, -- 'printf' : format string
