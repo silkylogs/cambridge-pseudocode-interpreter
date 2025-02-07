@@ -887,6 +887,16 @@ void semicolon(void);
 // doword("."); // Prints 10
 // ```
 
+typedef struct CP_ZeroTerminatedStringVector {
+    // char
+    //     strbuf[CTX_STRBUF_SZ], // Containing buffer
+    //     *(strs[CTX_STRBUF_SZ]); // Ptr to zero terminated strings
+    // Cell strtop; // Topmost index to ptr to ztstrings
+    char *const buffer;
+    Cell bufsz;
+    CP_StrZT *const strs;
+    Cell strcnt;
+} CP_ZTStrVec;
 
 #define CTX_MEM_SZ 0x100
 #define CTX_STRBUF_SZ 0x100
@@ -901,10 +911,7 @@ struct Context {
         ip,
         dummy;
     
-    char
-        strbuf[CTX_STRBUF_SZ], // Containing buffer
-        *(strs[CTX_STRBUF_SZ]); // Ptr to zero terminated strings
-    Cell strtop; // Topmost index to ptr to ztstrings
+    
 
     enum State {
         STATE_INTERPRETING,
