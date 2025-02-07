@@ -887,19 +887,71 @@ void semicolon(void);
 // doword("."); // Prints 10
 // ```
 
+// TODO: cleanup
 typedef struct CP_ZeroTerminatedStringVector {
-    // char
-    //     strbuf[CTX_STRBUF_SZ], // Containing buffer
-    //     *(strs[CTX_STRBUF_SZ]); // Ptr to zero terminated strings
-    // Cell strtop; // Topmost index to ptr to ztstrings
-    char *const buffer;
-    Cell bufsz;
-    CP_StrZT *const strs;
-    Cell strcnt;
-} CP_ZTStrVec;
+    char *charbuf; int64_t charbufsz;
+    CP_StrZT *strbuf, *next_free_str; int64_t strcnt;
+} CP_ZeroTerminatedStringVector, CP_ZTStrVec;
+
+typedef struct CP_ZeroTerminatedStringVector_InitArgs {
+    char *const charbuf_backingmem;
+    int64_t const charbuf_sz;
+    CP_StrZT *const strbuf_backingmem;
+    int64_t const strbuf_count;
+} CP_ZeroTerminatedStringVector_InitArgs, CP_ZTStrVec_InitArgs;
+void CP_ZeroTerminatedStringVector_init(
+    CP_ZTStrVec *const target,
+    CP_ZTStrVec_InitArgs const args
+) {
+    target->charbuf = args.charbuf_backingmem;
+    target->charbufsz = args.charbuf_sz;
+    
+    target->strbuf = args.strbuf_backingmem;
+    target->strcnt = args.strbuf_count;
+    
+    target->next_free_char = &target->charbuf[0];
+    target->next_free_str = &target->strbuf[0];
+}
+
+int64_t CP_ZeroTerminatedStringVector_chars_remaining(CP_ZTStrVec const *const vec) {
+    return vec->charbuf + vec->charbufsz - vec->next_free_char - 1;
+}
+
+void CP_ZeroTerminatedStringVector_addstr(
+    CP_ZTStrVec *const vec, 
+    char const *str, int64_t const strsz
+) {
+    if (strsz > CP_ZeroTerminatedStringVector_chars_remaining(vec)) {
+        CP_WARN("OUT OF MEMORY");
+        return;
+    }
+    for (int64_t i = 0; i < strsz; i++) vec->next_free_char[i] = str[i];
+    vec->next_free_char += strsz;
+    vec->strcnt++;
+}
+
+bool CP_ZeroTerminatedStringVector_strpresent(
+    CP_ZTStrVec const *const vec, 
+    char const *const str
+) {
+    for (int64_t i = 0; i < vec->strcnt; i++) {
+        if (0 == strcmp(str, vec->strbuf[i].start)) return true;
+    }
+    return (false);
+}
+
+bool CP_ZeroTerminatedStringVector_strpresentatindex(
+    CP_ZTStrVec const *const vec, 
+    char const *const str,
+    int64_t index
+) {
+    if (index < 0 || index >= vec->strcnt) return false;
+    if (0 == strcmp(str, vec->strbuf[index].start)) return true;
+    return false;
+}
 
 #define CTX_MEM_SZ 0x100
-#define CTX_STRBUF_SZ 0x100
+#define CTX_STRBUF_count 0x100
 #define CTX_PRIM_SZ 0x100
 typedef struct Context Ctx;
 typedef void (*PrimitiveFunction)(Ctx *);
@@ -911,7 +963,7 @@ struct Context {
         ip,
         dummy;
     
-    
+    CP_ZTStrVec strs;
 
     enum State {
         STATE_INTERPRETING,
@@ -937,12 +989,6 @@ Cell entry_fhidden(Cell const addr) { return addr + ENTRY_OFFSET_FHIDDEN; }
 Cell entry_fimmed(Cell const addr) { return addr + ENTRY_OFFSET_FIMMED; }
 Cell entry_name(Cell const addr) { return addr + ENTRY_OFFSET_NAME; }
 Cell entry_codeword(Cell const addr) { return addr + ENTRY_OFFSET_CODEWORD; }
-
-void stringcontainerinit(void) {
-    ctx.strbuf[0] = 0;
-    ctx.strtop = 1;
-    for (Cell i = 0; i < CTX_STRBUF_SZ; ctx.strs[i++] = ctx.strbuf); 
-}
 
 void comma(Cell const);
 void writeentry_bumphead(
@@ -1028,9 +1074,8 @@ Cell dictcontains(char const *const word) {
     Cell adr_entry = latest();
     do {
         Cell name_idx = entry_name(adr_entry);
-        char const *const lookup = ctx.strs[name_idx];
-        int strcmp_result = strcmp(word, lookup);
-        if (0 == strcmp_result) return adr_entry;
+        if (CP_ZeroTerminatedStringVector_strpresentatindex(ctx.strs, word, name_idx))
+            return adr_entry;
         adr_entry = ctx.mem[entry_next(adr_entry)];
     } while (adr_entry);
     return adr_entry;
@@ -1112,20 +1157,18 @@ void exec(Cell const addr) {
     }
 }
 
-void drop(void) {
+void empty_data_stack(void) {
     ctx.top = 0;
 }
 
-void rdrop(void) {
+void empty_return_stack(void) {
     ctx.rtop = 0;
 }
 
-void drop(void);
-void rdrop(void);
+void empty_return_stack(void);
 void quit(void) {
-    drop();
-    rdrop();
-    ctx.state = STATE_QUIT;
+    empty_return_stack();
+    ctx.state = STATE_INTERPRETING;
 }
 
 
@@ -1150,6 +1193,7 @@ void doword(char const *const word) {
         }
     }
 }
+#define d(WORD) doword(#WORD);
 
 void init(void) {
     dictinit();
@@ -1159,11 +1203,25 @@ Cell top(void) {
     return ctx.mem[ctx.top];
 }
 
+/*
+void add(Cell x, Cell y) { return x + y; }
+add_primitive("+", add, 2);
 
+#define d(WORD) doword(#WORD);
+d(:) d(double) d(dup) d(+) d(;)
+d(:) d(quad) d(double) d(double) d(;)
+d(2) d(quad) d(.)
+
+// Note: Dont bother stopping execution upon error
+d(1) d(+) d(1)
+
+void div(Cell x, Cell y) { int sf=1000; return ((x*sf)/y)/sf; }
+d(:) d(sum) (adr sz--sum) d(0) d(do) d(swap) d(dup) d(i) d(+) d() d(loop)
+*/
 
 bool test_forth(void) {
     init();
-    doword("5");
+    d(5);
     return top() == 5;
 }
 
