@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+#include <stdlib.h>
 
 // -- Utility macros ----
 //
@@ -60,7 +61,7 @@ static bool cp_assert_internal(bool b, const char *b_expression, const char *fil
 // main.c:83:1: Summary: One or more tests failed
 // ```
 
-#define MAX_TESTS (0x100)
+#define MAX_TESTS (0x80)
 typedef struct Tests {
     bool (*(fns[MAX_TESTS]))(void);
     char *names[MAX_TESTS];
@@ -155,7 +156,9 @@ typedef struct CP_InclusiveUnidirectionalSubstring {
 #define SUBL(str) CP_INCLUSIVE_UNIDIR_SUBSTRING_LITERAL(str)
 
 int32_t CP_SubStr_size(const CP_SubStr *x) {
-    return x->end - x->start + 1;
+    // return x->end - x->start + 1;
+    // TODO: switch to intptr_t or something instead of sticking to int32
+    return 0;
 }
 
 // -- from_const_cstr --------------------------
@@ -655,10 +658,11 @@ start:
     } else {
         if (found) {
             // TODO: validate this.
+            // TODO: casts are evil
             Iter2 lt, rt;
             lt.substr.start = str.substr.start;
-            lt.substr.end = split_loc - 1;
-            rt.substr.start =  split_loc + 1;
+            lt.substr.end = (char*)split_loc - 1;
+            rt.substr.start =  (char*)split_loc + 1;
             rt.substr.end = str.substr.end;
 
             // Push rt
@@ -669,6 +673,9 @@ start:
             goto start;
         }
     }
+
+    // Unreachable
+    return 0xCCCCCCCC;
 }
 
 bool test_cp_eval_expr2(void) {
@@ -897,7 +904,7 @@ struct Context {
     char
         strbuf[CTX_STRBUF_SZ], // Containing buffer
         *(strs[CTX_STRBUF_SZ]); // Ptr to zero terminated strings
-    Cell strtop;
+    Cell strtop; // Topmost index to ptr to ztstrings
 
     enum State {
         STATE_INTERPRETING,
@@ -914,29 +921,112 @@ enum DictEntry {
     ENTRY_OFFSET_NEXT,
     ENTRY_OFFSET_FHIDDEN,
     ENTRY_OFFSET_FIMMED,
+    ENTRY_OFFSET_NAME,
     ENTRY_OFFSET_CODEWORD,
     ENTRY_SIZE,
 };
 Cell entry_next(Cell const addr) { return addr + ENTRY_OFFSET_NEXT; }
 Cell entry_fhidden(Cell const addr) { return addr + ENTRY_OFFSET_FHIDDEN; }
 Cell entry_fimmed(Cell const addr) { return addr + ENTRY_OFFSET_FIMMED; }
+Cell entry_name(Cell const addr) { return addr + ENTRY_OFFSET_NAME; }
 Cell entry_codeword(Cell const addr) { return addr + ENTRY_OFFSET_CODEWORD; }
+
+void stringcontainerinit(void) {
+    ctx.strbuf[0] = 0;
+    ctx.strtop = 1;
+    for (Cell i = 0; i < CTX_STRBUF_SZ; ctx.strs[i++] = ctx.strbuf); 
+}
+
+void comma(Cell const);
+void writeentry_bumphead(
+    Cell const next, 
+    Cell const ishidden, 
+    Cell const isimmediate, 
+    Cell const name,
+    Cell const codeptr
+) {
+    comma(next);
+    comma(ishidden);
+    comma(isimmediate);
+    comma(name);
+    comma(codeptr);
+}
+
+void stringcontainerinit(void);
+void writeentry_bumphead(
+    Cell const next, 
+    Cell const ishidden, 
+    Cell const isimmediate, 
+    Cell const name,
+    Cell const codeptr
+);
+void dictinit(void) {
+    stringcontainerinit();
+
+    // init dict vars
+    ctx.latest = 0 + ENTRY_SIZE;
+    ctx.head = 0 + ENTRY_SIZE;
+    
+    Cell const 
+        ptr_to_nothing = 0,
+        is_very_hidden = 1,
+        not_immediate = 0,
+        no_name = 0;
+    writeentry_bumphead(ptr_to_nothing, is_very_hidden, not_immediate, no_name, ptr_to_nothing);
+}
+
+void writeentry_bumphead(
+    Cell const next, 
+    Cell const ishidden, 
+    Cell const isimmediate, 
+    Cell const name,
+    Cell const codeptr
+);
+void addentry_withcodeptr(
+    Cell const ishidden, 
+    Cell const isimmed, 
+    Cell const name,
+    Cell const codeptr
+) {
+    Cell newlatest = ctx.head;
+    Cell lastentry = ctx.latest;
+    writeentry_bumphead(lastentry, ishidden, isimmed, name, codeptr);
+}
+
+void addentry_withcodeptr(
+    Cell const ishidden, 
+    Cell const isimmed, 
+    Cell const name,
+    Cell const codeptr
+);
+void addentry(
+    Cell const ishidden, 
+    Cell const isimmed,
+    Cell const name
+) {
+    Cell const dummy = 0;
+    addentry_withcodeptr(ishidden, isimmed, name, dummy);
+    ctx.mem[ctx.latest - 1] = ctx.latest; // Fixup
+}
 
 Cell latest(void) {
     return ctx.latest;
 }
 
+// TODO: checked memory access, that throws an exception/quits
 Cell latest(void);
-Cell entry_codeword(Cell const addr);
+Cell entry_name(Cell const addr);
 Cell entry_next(Cell const addr);
 Cell dictcontains(char const *const word) {
-    Cell addr = latest();
+    Cell adr_entry = latest();
     do {
-        // TODO: checked memory access, that throws an exception/quits
-        if (0 == strcmp(word, ctx.strs[entry_codeword(addr)])) return addr;
-        addr = entry_next(addr);
-    } while (addr);
-    return addr;
+        Cell name_idx = entry_name(adr_entry);
+        char const *const lookup = ctx.strs[name_idx];
+        int strcmp_result = strcmp(word, lookup);
+        if (0 == strcmp_result) return adr_entry;
+        adr_entry = ctx.mem[entry_next(adr_entry)];
+    } while (adr_entry);
+    return adr_entry;
 }
 
 bool isnum(char const *const word) {
@@ -966,7 +1056,9 @@ Cell conv2num(char const *const word) {
     return atoll(word);
 }
 
-bool isprimitive(Cell const addr) {}
+bool isprimitive(Cell const addr) { 
+    return 0; // TODO
+}
 
 void next(void) {
     ctx.ip = ctx.mem[ctx.rtop];
@@ -1053,12 +1145,14 @@ void doword(char const *const word) {
 }
 
 void init(void) {
-    // Init dict
+    dictinit();
 }
 
 Cell top(void) {
     return ctx.mem[ctx.top];
 }
+
+
 
 bool test_forth(void) {
     init();
@@ -1077,6 +1171,7 @@ int32_t main(int32_t arg_count, char const *const *args) {
     CP_ADD_TEST(test_forth);
     CP_RUN_TESTS();
 
+    /*
     cprb_setup();
 
     // ToggleBorderlessWindowed();
@@ -1129,5 +1224,6 @@ int32_t main(int32_t arg_count, char const *const *args) {
 
     CloseWindow();
 
+    */
     return 0;
 }
