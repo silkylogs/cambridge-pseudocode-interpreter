@@ -4,8 +4,22 @@
 #include <stdint.h>
 #include <utility>
 #include <array>
+#include <string>
+#include <vector>
+#include <iostream>
 
+using Cell = uint16_t;
 
+struct ForthState {
+	std::vector<Cell> memory;
+	bool exit_requested;
+
+	Cell *backing_memory();
+	void overwrite_memory(char *const byte_string, size_t strlen);
+	void run();
+};
+
+#if 0
 // TODO: 
 
 using Cell = uint16_t;
@@ -155,3 +169,4 @@ int main() {
     return 0;
 }
 */
+#endif

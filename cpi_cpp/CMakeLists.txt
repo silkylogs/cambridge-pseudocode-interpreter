@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.28.3)
 
+
 project(cpi_cpp)
 add_executable(cpi_cpp src/main.cpp)
 target_compile_features(cpi_cpp PUBLIC cxx_std_23)
