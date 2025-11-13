@@ -1,1 +1,4 @@
 *.swp
+*.dSYM
+test
+cpi_c
