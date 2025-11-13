@@ -31,9 +31,9 @@ count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *se
 struct Int32Result
 ascii_string_to_int32(const char *str, size_t sz) {
 	struct Int32Result ret = {0};
-	size_t i = 0;
 	int32_t multiplicand = 0;
 	size_t actual_number_len_chars = 0;
+	const char *it = 0;
 
 	actual_number_len_chars = count_longest_sequence_of_char_in_set(str, sz, "0123456789");
 	if (0 == actual_number_len_chars) {
@@ -42,13 +42,12 @@ ascii_string_to_int32(const char *str, size_t sz) {
 		return ret;
 	}
 
-	i = actual_number_len_chars;
 	multiplicand = 1;
-	while (i) {
-		int32_t digit = str[i] - '0';
+	for (it = str + actual_number_len_chars - 1; it > str - 1; it -= 1) {
+		int32_t digit = *it - '0';
+		printf("%c=%d\n", *it, digit);
 		ret.val += digit * multiplicand;
 		multiplicand *= 10;
-		i -= 1;	
 	}
 
 	ret.res = true;

@@ -106,12 +106,20 @@ static bool test__ascii_string_to_int32__general(void) {
 	return (249 == result.val) && (result.res);
 }
 
+static bool test__ascii_string_to_int32__false(void) {
+	struct Int32Result result = {0};
+	result = ascii_string_to_int32("ahdfldsajfdaoiewfsdjfoj", 4);
+    printf("res: expected %d got %d\n", 0, result.res);
+	return (!result.res);
+}
+
 int main(void) {
     CP_ADD_TEST(test__char_in__general);
     CP_ADD_TEST(test__char_in__absent);
     CP_ADD_TEST(test__char_in__vacuous_truth);
     CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
 	CP_ADD_TEST(test__ascii_string_to_int32__general);
+	CP_ADD_TEST(test__ascii_string_to_int32__false);
 	CP_RUN_TESTS();
 	return 0;
 }
