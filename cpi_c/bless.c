@@ -4,7 +4,7 @@
 // set is expected to be a c-string
 bool char_in(char c, const char *set) {
 	if ('\0' == *set) return true; // Vacuous truth
-	
+
 	while ('\0' != *set) {
 		if (c == *set) return true;
 		set += 1;
@@ -13,7 +13,7 @@ bool char_in(char c, const char *set) {
 }
 
 
-// 0001a returns 3, given set "01234567890"
+// see test for expected usage
 // set is expected to be a c-string
 size_t 
 count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *set) {

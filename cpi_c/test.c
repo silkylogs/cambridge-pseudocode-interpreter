@@ -89,8 +89,13 @@ static bool test__char_in__vacuous_truth(void) {
     return char_in('a', "");
 }
 
-static bool test__count_longest_sequence_of_char_in_set(void) {
-    return false;
+static bool test__count_longest_sequence_of_char_in_set__general(void) {
+    char str[] = "0001a";
+    size_t expected = 4;
+    size_t got = count_longest_sequence_of_char_in_set(str, sizeof str, "01234567890");;
+    printf("Expected %zu got %zu\n", expected, got);
+    return expected == got;
+
 }
 
 static bool test__ascii_string_to_int32__general(void) {
@@ -105,7 +110,7 @@ int main(void) {
     CP_ADD_TEST(test__char_in__general);
     CP_ADD_TEST(test__char_in__absent);
     CP_ADD_TEST(test__char_in__vacuous_truth);
-    CP_ADD_TEST(test__count_longest_sequence_of_char_in_set);
+    CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
 	CP_ADD_TEST(test__ascii_string_to_int32__general);
 	CP_RUN_TESTS();
 	return 0;
