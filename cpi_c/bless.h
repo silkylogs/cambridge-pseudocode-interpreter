@@ -9,8 +9,7 @@
 
 struct Int32Result {
 	int32_t val;
-	uint8_t padding[3];
-	bool res;
+	uint32_t res;
 };
 
 bool char_in(char c, const char *set);
