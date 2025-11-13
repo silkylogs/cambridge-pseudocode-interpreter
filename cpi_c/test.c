@@ -113,13 +113,78 @@ static bool test__ascii_string_to_int32__false(void) {
 	return (!result.res);
 }
 
+static bool test__parse_literal__integer_positive(void) {
+    return false;
+}
+
+static bool test__parse_literal__integer_negative(void) {
+    return false;
+}
+
+static bool test__parse_literal__real_postive(void) {
+    return false;
+}
+
+static bool test__parse_literal__real_negative(void) {
+    return false;
+}
+
+static bool test__parse_literal__char_valid(void) {
+    return false;
+}
+
+static bool test__parse_literal__char_empty(void) {
+    return false;
+}
+
+static bool test__parse_literal__char_not_in_character_set(void) {
+    return false;
+}
+
+static bool test__parse_literal__char_multi_character(void) {
+    return false;
+}
+
+static bool test__parse_literal__string(void) {
+    return false;
+}
+
+static bool test__parse_literal__string_empty(void) {
+    return false;
+}
+
+static bool test__parse_literal__boolean(void) {
+    return false;
+}
+
+static bool test__parse_literal__date(void) {
+    return false;
+}
+
 int main(void) {
     CP_ADD_TEST(test__char_in__general);
     CP_ADD_TEST(test__char_in__absent);
     CP_ADD_TEST(test__char_in__vacuous_truth);
+    
     CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
-	CP_ADD_TEST(test__ascii_string_to_int32__general);
+	
+    CP_ADD_TEST(test__ascii_string_to_int32__general);
 	CP_ADD_TEST(test__ascii_string_to_int32__false);
+    
+    CP_ADD_TEST(test__parse_literal__integer_positive);
+    CP_ADD_TEST(test__parse_literal__integer_negative);
+    CP_ADD_TEST(test__parse_literal__real_postive);
+    CP_ADD_TEST(test__parse_literal__real_negative);
+    CP_ADD_TEST(test__parse_literal__char_valid);
+    CP_ADD_TEST(test__parse_literal__char_empty);
+    CP_ADD_TEST(test__parse_literal__char_not_in_character_set);
+    CP_ADD_TEST(test__parse_literal__char_multi_character);
+    CP_ADD_TEST(test__parse_literal__string);
+    CP_ADD_TEST(test__parse_literal__string_empty);
+    CP_ADD_TEST(test__parse_literal__boolean);
+    CP_ADD_TEST(test__parse_literal__date);
+
 	CP_RUN_TESTS();
-	return 0;
+	
+    return 0;
 }
