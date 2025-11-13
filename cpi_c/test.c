@@ -77,14 +77,36 @@ static void cp_run_tests(Tests ts) {
     );
 }
 
-static bool test_ascii_string_to_int32(void) {
-	int32_t num;
-	num = ascii_string_to_int32("249", 4).val;
-	return (249 == num);
+static bool test__char_in__general(void) {
+    return char_in('0', "1234567890");
+}
+
+static bool test__char_in__absent(void) {
+    return !char_in('a', "bcdefgh");
+}
+
+static bool test__char_in__vacuous_truth(void) {
+    return char_in('a', "");
+}
+
+static bool test__count_longest_sequence_of_char_in_set(void) {
+    return false;
+}
+
+static bool test__ascii_string_to_int32__general(void) {
+	struct Int32Result result = {0};
+	result = ascii_string_to_int32("249", 4);
+    printf("res: expected %d got %d\n", 1, result.res);
+    printf("val: expected %d got %d\n", 249, result.val);
+	return (249 == result.val) && (result.res);
 }
 
 int main(void) {
-	CP_ADD_TEST(test_ascii_string_to_int32);
+    CP_ADD_TEST(test__char_in__general);
+    CP_ADD_TEST(test__char_in__absent);
+    CP_ADD_TEST(test__char_in__vacuous_truth);
+    CP_ADD_TEST(test__count_longest_sequence_of_char_in_set);
+	CP_ADD_TEST(test__ascii_string_to_int32__general);
 	CP_RUN_TESTS();
 	return 0;
 }

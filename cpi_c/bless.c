@@ -3,6 +3,8 @@
 // is a character in a set of chars?
 // set is expected to be a c-string
 bool char_in(char c, const char *set) {
+	if ('\0' == *set) return true; // Vacuous truth
+	
 	while ('\0' != *set) {
 		if (c == *set) return true;
 		set += 1;
