@@ -45,7 +45,6 @@ ascii_string_to_int32(const char *str, size_t sz) {
 	multiplicand = 1;
 	for (it = str + actual_number_len_chars - 1; it > str - 1; it -= 1) {
 		int32_t digit = *it - '0';
-		printf("%c=%d\n", *it, digit);
 		ret.val += digit * multiplicand;
 		multiplicand *= 10;
 	}
