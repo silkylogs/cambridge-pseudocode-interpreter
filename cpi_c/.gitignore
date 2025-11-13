@@ -3,3 +3,4 @@
 test
 cpi_c
 *.o
+*.exe 
