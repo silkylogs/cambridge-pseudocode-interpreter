@@ -23,9 +23,9 @@
 // ```
 
 #define CP_LEVEL_LOG(LEVEL, PRINTF_FMT_STR, ...) \
-    printf("%s:%d:1: " LEVEL ": " PRINTF_FMT_STR, __FILE__, __LINE__, __VA_ARGS__);
-#define CP_LOG(FMT_MSG, ...) CP_LEVEL_LOG("Log", FMT_MSG, __VA_ARGS__);
-#define CP_WARN(FMT_MSG, ...) CP_LEVEL_LOG("Warning", FMT_MSG, __VA_ARGS__);
+    printf("%s:%d:1: " LEVEL ": " PRINTF_FMT_STR, __FILE__, __LINE__, __VA_ARGS__)
+//#define CP_LOG(FMT_MSG, ...) CP_LEVEL_LOG("Log", FMT_MSG, __VA_ARGS__)
+#define CP_WARN(FMT_MSG, ...) CP_LEVEL_LOG("Warning", FMT_MSG, __VA_ARGS__)
 
 #define MAX_TESTS (0x80)
 typedef struct Tests {
@@ -40,7 +40,7 @@ static Tests g_tests = {
     .ptr_to_top = -1,
 };
 
-#define CP_ADD_TEST(TEST_FN) cp_add_test(&g_tests, TEST_FN, #TEST_FN);
+#define CP_ADD_TEST(TEST_FN) cp_add_test(&g_tests, TEST_FN, #TEST_FN)
 static void cp_add_test(Tests *ts, bool (*test_fn)(void), char *name) {
     ts->ptr_to_top++;
 
@@ -77,9 +77,9 @@ static void cp_run_tests(Tests ts) {
     );
 }
 
-bool test_ascii_string_to_int32(void) {
+static bool test_ascii_string_to_int32(void) {
 	int32_t num;
-	num = ascii_string_to_int32("249", 4).res;
+	num = ascii_string_to_int32("249", 4).val;
 	return (249 == num);
 }
 
