@@ -2,88 +2,88 @@
 
 /*
 Diagrams generated with: https://asciiflow.com/
-┌───────────────────────────────────────────────────────────────────────────┐ 
-│To best illustrate how this forth works, one must understand the dictionary│ 
-│The format of a typical dictionary is as follows:                          │ 
-│┌────┐                                                                     │ 
-││NULL│                                                                     │ 
-│└─▲──┘                                                                     │ 
-│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│ 
-││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││ 
-│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│ 
-│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│ 
-││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││ 
-│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│ 
-│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│ 
-││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││ 
-│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│ 
-│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│ 
-││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││ 
-│└────┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│ 
-└───────────────────────────────────────────────────────────────────────────┘ 
+┌───────────────────────────────────────────────────────────────────────────┐
+│To best illustrate how this forth works, one must understand the dictionary│
+│The format of a typical dictionary is as follows:                          │
+│┌────┐                                                                     │
+││NULL│                                                                     │
+│└─▲──┘                                                                     │
+│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│
+││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││
+│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│
+│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│
+││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││
+│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│
+│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│
+││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││
+│└─▲──┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│
+│┌─┼──┬─────┬─────────┬─────┬─────────────────────┐       ┌────────────────┐│
+││LINK│FLAGS│NAME_SIZE│NAME │PTR_TO_START_OF_ENTRY│       │DEFINITION......││
+│└────┴─────┴─────────┴─────┴─────────────────────┘       └────────────────┘│
+└───────────────────────────────────────────────────────────────────────────┘
 
 
-┌─────────────────────────────────────────────────────────────────────────────────┐  
-│ Elaborating the exact format of each entry:                                     │  
-│ Note: Each box represents a "Cell", which is the "bit-ness" of the forth.       │  
-│       This forth has 16 bits in a cell, or 2 bytes.                             │  
-│ ────────────────────────────────────────────────────────────────────────────    │  
-│                                                                                 │  
-│┌────────────┐┌─────┐┌─────────┐┌───────┐┌───┐┌───────┐┌─────────┐               │  
-││LINK POINTER││FLAGS││NAME_SIZE││NAME[0]││...││NAME[N]││ENTRY_PTR│               │  
-│└───────▲────┘└─────┘└─────────┘└───────┘└───┘└───────┘└────┬────┘               │  
-│        └───────────────────────────────────────────────────┘                    │  
-└─────────────────────────────────────────────────────────────────────────────────┘  
-┌─────────────────────────────────────────────────────────────────────────────────┐  
-│┌────────┐                                                                       │  
-││LINK_PTR│ (Link pointer)                                                        │  
-│└────────┘                                                                       │  
-│Points to a) The next word                                                       │  
-│          b) NULL, indicating the end of the list.                               │  
-│                                                                                 │  
-│Remark: This makes the word-search algorithm simple:                             │  
-│       ┌──────────────────────────────────────┐                                  │  
-│       │while (ptr) {                         │                                  │  
-│       │        if (name(ptr) == query) break;│                                  │  
-│       │        else ptr = *ptr;              │                                  │  
-│       │}                                     │                                  │  
-│       │return ptr;                           │                                  │  
-│       └──────────────────────────────────────┘                                  │  
-└─────────────────────────────────────────────────────────────────────────────────┘  
-┌─────────────────────────────────────────────────────────────────────────────────┐  
-│┌─────┐                                                                          │  
-││FLAGS│                                                                          │  
-│└─────┘                                                                          │  
-│Contains data on how to interpret this word.                                     │  
-│┌─┬─┬───────────────────────────┐                                                │  
-││F│E│D C B A 9 8 7 6 5 4 3 2 1 0│                                                │  
-│└┬┴┬┴┬──────────────────────────┘                                                │  
-│ │ │ └────────────────►Reserved                                                  │  
-│ │ └──────────────────►Immediate (does nothing, for now)                         │  
-│ └────────────────────►Primitive (Calls an external function)                    │  
-└─────────────────────────────────────────────────────────────────────────────────┘  
-┌─────────────────────────────────────────────────────────────────────────────────┐  
-│┌─────────┐                                                                      │  
-││NAME_SIZE│                                                                      │  
-│└─────────┘                                                                      │  
-│ Contains the length of the name of the word, (in words),                        │  
-│ Aligned to the nearest word.                                                    │  
-│ The name is not zero terminated, though is padded with zeroes to align to the   │  
-│ nearest word.                                                                   │  
-│                                                                                 │  
-│ Remark: This size is needed to get to the ENTRY_PTR field and beyond.           │  
-│                                                                                 │  
-│┌───────┐┌───┐┌───────┐                                                          │  
-││NAME[0]││...││NAME[N]│                                                          │  
-│└───────┘└───┘└───────┘                                                          │  
-│Examples of valid NAME_SIZEs and NAMEs:                                          │  
-│┌────┐   ┌────┐┌────┐┌────┐                                                      │  
-││0003│   │F O ││R T ││H \0│                                                      │  
-│└────┘   └────┘└────┘└────┘                                                      │  
-│┌────┐   ┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│  
-││000B│   │P s ││e u ││d o ││h y ││p o ││p a ││r a ││t h ││y r ││o i ││d i ││s m ││  
-│└────┘   └────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘│  
-└─────────────────────────────────────────────────────────────────────────────────┘  
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Elaborating the exact format of each entry:                                     │
+│ Note: Each box represents a "Cell", which is the "bit-ness" of the forth.       │
+│       This forth has 16 bits in a cell, or 2 bytes.                             │
+│ ────────────────────────────────────────────────────────────────────────────    │
+│                                                                                 │
+│┌────────────┐┌─────┐┌─────────┐┌───────┐┌───┐┌───────┐┌─────────┐               │
+││LINK POINTER││FLAGS││NAME_SIZE││NAME[0]││...││NAME[N]││ENTRY_PTR│               │
+│└───────▲────┘└─────┘└─────────┘└───────┘└───┘└───────┘└────┬────┘               │
+│        └───────────────────────────────────────────────────┘                    │
+└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│┌────────┐                                                                       │
+││LINK_PTR│ (Link pointer)                                                        │
+│└────────┘                                                                       │
+│Points to a) The next word                                                       │
+│          b) NULL, indicating the end of the list.                               │
+│                                                                                 │
+│Remark: This makes the word-search algorithm simple:                             │
+│       ┌──────────────────────────────────────┐                                  │
+│       │while (ptr) {                         │                                  │
+│       │        if (name(ptr) == query) break;│                                  │
+│       │        else ptr = *ptr;              │                                  │
+│       │}                                     │                                  │
+│       │return ptr;                           │                                  │
+│       └──────────────────────────────────────┘                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│┌─────┐                                                                          │
+││FLAGS│                                                                          │
+│└─────┘                                                                          │
+│Contains data on how to interpret this word.                                     │
+│┌─┬─┬───────────────────────────┐                                                │
+││F│E│D C B A 9 8 7 6 5 4 3 2 1 0│                                                │
+│└┬┴┬┴┬──────────────────────────┘                                                │
+│ │ │ └────────────────►Reserved                                                  │
+│ │ └──────────────────►Immediate (does nothing, for now)                         │
+│ └────────────────────►Primitive (Calls an external function)                    │
+└─────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│┌─────────┐                                                                      │
+││NAME_SIZE│                                                                      │
+│└─────────┘                                                                      │
+│ Contains the length of the name of the word, (in words),                        │
+│ Aligned to the nearest word.                                                    │
+│ The name is not zero terminated, though is padded with zeroes to align to the   │
+│ nearest word.                                                                   │
+│                                                                                 │
+│ Remark: This size is needed to get to the ENTRY_PTR field and beyond.           │
+│                                                                                 │
+│┌───────┐┌───┐┌───────┐                                                          │
+││NAME[0]││...││NAME[N]│                                                          │
+│└───────┘└───┘└───────┘                                                          │
+│Examples of valid NAME_SIZEs and NAMEs:                                          │
+│┌────┐   ┌────┐┌────┐┌────┐                                                      │
+││0003│   │F O ││R T ││H \0│                                                      │
+│└────┘   └────┘└────┘└────┘                                                      │
+│┌────┐   ┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐│
+││000B│   │P s ││e u ││d o ││h y ││p o ││p a ││r a ││t h ││y r ││o i ││d i ││s m ││
+│└────┘   └────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘│
+└─────────────────────────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │┌─────────┐                                                                      │
 ││ENTRY_PTR│ (Entry pointer)                                                      │
@@ -277,14 +277,25 @@ namespace Forth {
 
         std::vector<void(*)(State&)> primitives;
 
-        Cell* inst_ptr;
-        Cell* rstk_ptr;
-        Cell* dstk_ptr;
+        Cell* ptr_instruction;
+        Cell* ptr_return_stack;
+        Cell* ptr_data_stack;
+        Cell* dict_next_available_cell;
+        Cell* dict_latest_defined_entry;
     };
 
-    void fixup_ptrs_after_allocation(State &self);
-    void alloc_set_memory_conents(State& self, char* const byte_string, size_t strlen);
     void inner_interpreter(State& self);
+
+    namespace BuiltinPrimitives {
+        
+    };
+
+    namespace Util {
+        void alloc_set_memory_conents(State& self, char* const byte_string, size_t strlen);
+        void fixup_ptrs_after_allocation(State& self);
+        void add_new_entry(State& self, char* const byte_string, size_t strlen);
+        void append_def_to_latest_entry(State& self, char* const byte_string, size_t strlen);
+    };
 };
 
 #if 0
