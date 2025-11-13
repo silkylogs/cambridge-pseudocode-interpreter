@@ -1,8 +1,8 @@
 clear
+FLAGS="-Wall -Weverything -g -Wno-unsafe-buffer-usage"
 
-clang -c -Wall -Weverything -g bless.c -o bless.o
-
-clang bless.o -Wall -Weverything -g "test.c" -o "test"
-#clang main.c -Wall -Weverything -g -o cpi_c
+clang -c $FLAGS bless.c -o bless.o
+clang bless.o $FLAGS "test.c" -o "test"
+# clang main.c $FLAGS -o cpi_c
 
 ./"test"
