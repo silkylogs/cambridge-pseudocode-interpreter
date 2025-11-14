@@ -15,7 +15,7 @@ bool char_in(char c, const char *set) {
 
 // see test for expected usage
 // set is expected to be a c-string
-size_t 
+size_t
 count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *set) {
 	size_t count = 0;
 	for (size_t i = 0; i < sz; ++i) {
