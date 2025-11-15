@@ -1,5 +1,5 @@
 clear
-FLAGS="-Wall -Wextra -g -Wno-unsafe-buffer-usage"
+FLAGS="-Wall -Wextra -Wmost -g -Wno-unsafe-buffer-usage"
 
 clang -c $FLAGS bless.c -o bless.o
 clang bless.o $FLAGS "test.c" -o "test"
