@@ -16,6 +16,26 @@ bool char_in(char c, const char *set);
 size_t count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *set);
 struct Int32Result ascii_string_to_int32(const char *str, size_t sz);
 
+enum AtomicDataType { ADT_INTEGER, ADT_REAL, ADT_CHAR, ADT_STRING, ADT_BOOLEAN, ADT_DATE };
+
+struct Date { int32_t day; int32_t month; int32_t year; };
+
+struct Literal {
+	enum AtomicDataType kind;
+	union LiteralValue {
+		int32_t as_int32;
+		float as_float;
+		char as_char;
+		char *as_string;
+		bool as_boolean;
+		struct Date as_date;
+	} val;
+	bool is_valid;
+};
+
+bool literal_shallow_equality(struct Literal lit1, struct Literal lit2);
+struct Literal try_parse_literal(const char *str, size_t sz);
+
 #endif
 
 

@@ -100,25 +100,68 @@ static bool test__count_longest_sequence_of_char_in_set__general(void) {
 
 static bool test__ascii_string_to_int32__general(void) {
 	struct Int32Result result = {0};
-	result = ascii_string_to_int32("249", 4);
-	printf("res: expected %d got %d\n", 1, result.res);
-	printf("val: expected %d got %d\n", 249, result.val);
-	return (249 == result.val) && (result.res);
+	char str[] = "249"; char sz = sizeof str;
+	int32_t expected = 249;
+
+	result = ascii_string_to_int32(str, sz);
+	printf("res: expected %d got %d\n", true, result.res);
+	printf("val: expected %d got %d\n", expected, result.val);
+	return (expected == result.val) && (result.res);
 }
 
-static bool test__ascii_string_to_int32__false(void) {
+static bool test__ascii_string_to_int32__not_an_int(void) {
 	struct Int32Result result = {0};
 	result = ascii_string_to_int32("ahdfldsajfdaoiewfsdjfoj", 4);
 	printf("res: expected %d got %d\n", 0, result.res);
 	return (!result.res);
 }
 
+static bool test__ascii_string_to_int32__negative(void) {
+	struct Int32Result result = {0};
+	char str[] = "-249";
+	char sz = sizeof str;
+	int32_t expected = -249;
+
+	result = ascii_string_to_int32(str, sz);
+	printf("res: expected %d got %d\n", true, result.res);
+	printf("val: expected %d got %d\n", expected, result.val);
+	return (expected == result.val) && (result.res);
+}
+
 static bool test__parse_literal__integer_positive(void) {
-	return false;
+	char str[] = "849034";
+	char sz = sizeof str;
+	struct Literal expected, got;
+	bool res;
+
+	expected.kind = ADT_INTEGER;
+	expected.val.as_int32 = 849034;
+	expected.is_valid = true;
+
+	got = try_parse_literal(str, sz);
+	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
+	res = literal_shallow_equality(expected, got);
+	printf("Got: kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
+
+	return res;
 }
 
 static bool test__parse_literal__integer_negative(void) {
-	return false;
+	char str[] = "-849034";
+	char sz = sizeof str;
+	struct Literal expected, got;
+	bool res;
+
+	expected.kind = ADT_INTEGER;
+	expected.val.as_int32 = -849034;
+	expected.is_valid = true;
+
+	got = try_parse_literal(str, sz);
+	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
+	res = literal_shallow_equality(expected, got);
+	printf("Got: kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
+
+	return res;
 }
 
 static bool test__parse_literal__real_postive(void) {
@@ -161,6 +204,13 @@ static bool test__parse_literal__date(void) {
 	return false;
 }
 
+// static bool test__detect_thing__comment(void) {
+// 	char str[] = "// This is a comment\n"
+// 	struct Thing thing = detect_thing(str, sizeof str);
+// 	return	thing.kind == THING_KIND_COMMENT
+// 		&&	(0 == strcmp("This is a comment", thing.as_comment.text));
+// }
+
 int main(void) {
 	CP_ADD_TEST(test__char_in__general);
 	CP_ADD_TEST(test__char_in__absent);
@@ -169,7 +219,9 @@ int main(void) {
 	CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
 
 	CP_ADD_TEST(test__ascii_string_to_int32__general);
-	CP_ADD_TEST(test__ascii_string_to_int32__false);
+	CP_ADD_TEST(test__ascii_string_to_int32__not_an_int);
+	CP_ADD_TEST(test__ascii_string_to_int32__negative);
+	
 
 	CP_ADD_TEST(test__parse_literal__integer_positive);
 	CP_ADD_TEST(test__parse_literal__integer_negative);
