@@ -34,6 +34,8 @@ struct Literal {
 };
 
 bool literal_shallow_equality(struct Literal lit1, struct Literal lit2);
+
+// TODO: Implement as ECS, current approach is not maintainable.
 struct Literal try_parse_literal(const char *str, size_t sz);
 
 #endif
