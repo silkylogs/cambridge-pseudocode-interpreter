@@ -35,8 +35,24 @@ struct Literal {
 
 bool literal_shallow_equality(struct Literal lit1, struct Literal lit2);
 
-// TODO: Implement as ECS, current approach is not maintainable.
 struct Literal try_parse_literal(const char *str, size_t sz);
+
+// TODO: Implement as ECS, current approach is not maintainable.
+// Idea: Have a container of atomic datatypes,
+struct ProgramData {
+	int32_t integers[SZ];
+	float floats[SZ];
+	char chars[SZ];
+	struct String strings[SZ];
+	bool booleans[SZ];
+	struct Date dates[SZ];
+
+	char *identifier_or_literal_names;
+};
+// And another of custom types
+struct CustomType {
+	
+};
 
 #endif
 
