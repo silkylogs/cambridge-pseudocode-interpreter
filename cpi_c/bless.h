@@ -54,10 +54,37 @@ struct CustomType {
 	
 };
 
+ret_t get_statement_bounds_and_type();
+void exec_stmt();
+
 #endif
 
 
 /**** Language grammar: ****
+
+<statement> ::=
+	| <var_decl>
+	| <const_decl>
+	| <array_decl>
+	| <input>
+	| <output>
+	| <openfile>
+	| <readfile>
+	| <writefile>
+	| <closefile>
+	| <seek>
+	| <getrecord>
+	| <putrecord>
+	| <custom_type_defn>
+	| <assignment>
+	| <conditional>
+	| <case>
+	| <for_loop>
+	| <repeat_until_loop>
+	| <while_loop>
+	| <proc_defn>
+	| <call>
+	| <fn_defn>
 
 <comment> ::= "//" <text> <newline>
 
@@ -80,8 +107,8 @@ struct CustomType {
 	| "-" <number> "." <number>
 
 <char_literal> ::=
-	"'" <character> "'"
-	"'" "'" // Error case
+	| "'" <character> "'"
+	| "'" "'" // Error case
 
 <string_literal> ::=
 	| """ <string_text> """
@@ -164,33 +191,6 @@ struct CustomType {
 
 <putrecord> ::= "PUTRECORD" <identifier> "," <expr>
 
-<statement> ::=
-	| <statement> <comment>
-	| <newline>
-	| <comment>
-	| <var_decl>
-	| <const_decl>
-	| <assignment>
-	| <array_decl>
-	| <custom_type_defn>
-	| <input>
-	| <output>
-	| <conditional>
-	| <case>
-	| <for_loop>
-	| <repeat_until_loop>
-	| <while_loop>
-	| <proc_defn>
-	| <call>
-	| <fn_defn>
-	| <openfile>
-	| <readfile>
-	| <writefile>
-	| <closefile>
-	| <seek>
-	| <getrecord>
-	| <putrecord>
-	| <statement>
 
 <datatype> ::= <identifier> | <atomic_typename>
 */
