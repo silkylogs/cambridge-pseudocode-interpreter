@@ -115,3 +115,9 @@ struct Literal try_parse_literal(const char *str, size_t sz) {
 
 	return retval;
 }
+
+struct StatementTypeAndBounds get_statement(const char *ptr) {
+	struct StatementTypeAndBounds ret = {0};
+
+	return ret;
+}

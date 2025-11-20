@@ -37,7 +37,7 @@ bool literal_shallow_equality(struct Literal lit1, struct Literal lit2);
 
 struct Literal try_parse_literal(const char *str, size_t sz);
 
-// TODO: Implement as ECS, current approach is not maintainable.
+/* TODO: Implement as ECS, current approach is not maintainable.
 // Idea: Have a container of atomic datatypes,
 struct ProgramData {
 	int32_t integers[SZ];
@@ -52,10 +52,47 @@ struct ProgramData {
 // And another of custom types
 struct CustomType {
 	
+};*/
+
+
+enum StatementType {
+	STMT_VAR_DECL,
+	STMT_CONST_DECL,
+	STMT_1D_ARRAY_DECL,
+	STMT_2D_ARRAY_DECL,
+	STMT_INPUT,
+	STMT_OUTPUT,
+	STMT_OPENFILE,
+	STMT_READFILE,
+	STMT_WRITEFILE,
+	STMT_CLOSEFILE,
+	STMT_SEEK,
+	STMT_GETRECORD,
+	STMT_PUTRECORD,
+	STMT_CUSTOM_TYPE_DEFN,
+	STMT_ASSIGNMENT,
+	STMT_CONDITIONAL,
+	STMT_CASE,
+	STMT_FOR_LOOP,
+	STMT_REPEAT_UNTIL_LOOP,
+	STMT_WHILE_LOOP,
+	STMT_PROC_DEFN,
+	STMT_CALL,
+	STMT_FN_DEFN,
 };
 
-ret_t get_statement_bounds_and_type();
-void exec_stmt();
+struct StatementTypeAndBounds {
+	enum StatementType type;
+	char *start;
+	size_t size;
+};
+
+// Inteneded loop:
+// stmt = get_statement(ptr);
+// exec_stmt(stmt);
+// ptr += stmt.size;
+struct StatementTypeAndBounds get_statement(const char *ptr);
+void exec_stmt(struct StatementTypeAndBounds stmt);
 
 #endif
 

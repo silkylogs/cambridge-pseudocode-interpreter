@@ -204,6 +204,70 @@ static bool test__try_parse_literal__date(void) {
 	return false;
 }
 
+
+static bool test__get_statement__VAR_DECL(void) {
+	struct StatementTypeAndBounds expected, got;
+	char stmt[] = "DECLARE x : INTEGER";
+
+	expected.type = STMT_VAR_DECL;
+	expected.start = stmt;
+	expected.size = sizeof stmt - 1;
+
+	got = get_statement(stmt);
+
+	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+
+	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+}
+
+static bool test__get_statement__CONST_DECL(void) {
+	struct StatementTypeAndBounds expected, got;
+	char stmt[] = "CONSTANT x = 4324";
+
+	expected.type = STMT_CONST_DECL;
+	expected.start = stmt;
+	expected.size = sizeof stmt - 1;
+
+	got = get_statement(stmt);
+
+	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+
+	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+}
+static bool test__get_statement__1D_ARRAY_DECL(void) {
+	struct StatementTypeAndBounds expected, got;
+	char stmt[] = "DECLARE StudentNames : ARRAY[1:30] OF STRING";
+
+	expected.type = STMT_1D_ARRAY_DECL;
+	expected.start = stmt;
+	expected.size = sizeof stmt - 1;
+
+	got = get_statement(stmt);
+
+	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+
+	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+}
+
+static bool test__get_statement__2D_ARRAY_DECL(void) {
+	struct StatementTypeAndBounds expected, got;
+	char stmt[] = "DECLARE NoughtsAndCrosses : ARRAY[1:3,1:3] OF CHAR";
+
+	expected.type = STMT_2D_ARRAY_DECL;
+	expected.start = stmt;
+	expected.size = sizeof stmt - 1;
+
+	got = get_statement(stmt);
+
+	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+
+	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+}
+
 // static bool test__detect_thing__comment(void) {
 // 	char str[] = "// This is a comment\n"
 // 	struct Thing thing = detect_thing(str, sizeof str);
@@ -235,6 +299,11 @@ int main(void) {
 	CP_ADD_TEST(test__try_parse_literal__string_empty);
 	CP_ADD_TEST(test__try_parse_literal__boolean);
 	CP_ADD_TEST(test__try_parse_literal__date);
+
+	CP_ADD_TEST(test__get_statement__VAR_DECL);
+	CP_ADD_TEST(test__get_statement__CONST_DECL);
+	CP_ADD_TEST(test__get_statement__1D_ARRAY_DECL);
+	CP_ADD_TEST(test__get_statement__2D_ARRAY_DECL);
 
 	CP_RUN_TESTS();
 
