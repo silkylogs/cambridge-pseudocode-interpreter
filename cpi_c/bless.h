@@ -15,6 +15,7 @@ struct Int32Result {
 bool char_in(char c, const char *set);
 size_t count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *set);
 struct Int32Result ascii_string_to_int32(const char *str, size_t sz);
+float ascii_string_to_float(char const *str, size_t sz);
 
 enum AtomicDataType { ADT_INTEGER, ADT_REAL, ADT_CHAR, ADT_STRING, ADT_BOOLEAN, ADT_DATE };
 

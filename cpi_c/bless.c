@@ -58,6 +58,41 @@ ascii_string_to_int32(const char *str, size_t sz) {
 	return ret;
 }
 
+// Sz points to the last character of the string. Not null. Is a slice.
+float ascii_string_to_float(char const *str, size_t sz) {
+	size_t dot_idx = 0;
+	float result = 0;
+	size_t dot_count = 0;
+
+	for (dot_idx = 0; dot_idx <= sz; ++dot_idx) {
+		if (str[dot_idx] == '.') {
+			dot_count++;
+			break;
+		}
+	}
+
+	if (dot_count == 1) {
+		size_t i;
+		float multiplier_of_ten;
+		
+		// Integer part
+		multiplier_of_ten = 1;
+		for (i = dot_idx - 1; i != 0-1; --i) {
+			result += (str[i] - '0') * multiplier_of_ten;
+			multiplier_of_ten *= 10;
+		}
+
+		// Fractional part
+		multiplier_of_ten = 0.1;
+		for (i = dot_idx + 1; i < sz; ++i) {
+			result += (str[i] - '0') * multiplier_of_ten;
+			multiplier_of_ten /= 10;
+		}
+
+		return result;
+	} else return (float)0xCCCCcccc;
+}
+
 bool literal_shallow_equality(struct Literal lit1, struct Literal lit2) {
 	switch (lit1.kind) {
 		case ADT_INTEGER: {
