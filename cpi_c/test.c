@@ -164,6 +164,12 @@ static bool test__try_parse_literal__integer_negative(void) {
 	return res;
 }
 
+static bool test__ascii_string_to_float(void) {
+	char str[] = "12340.56789";
+	printf("Expected: %s\nGot: %f\n", str, ascii_string_to_float(str, (sizeof str) - 1));
+	return true;
+}
+
 static bool test__try_parse_literal__real_postive(void) {
 	char str[] = "3.14";
 	char sz = sizeof str;
@@ -391,6 +397,7 @@ int main(void) {
 	CP_ADD_TEST(test__ascii_string_to_int32__not_an_int);
 	CP_ADD_TEST(test__ascii_string_to_int32__negative);
 	
+	CP_ADD_TEST(test__ascii_string_to_float);
 
 	CP_ADD_TEST(test__try_parse_literal__integer_positive);
 	CP_ADD_TEST(test__try_parse_literal__integer_negative);
