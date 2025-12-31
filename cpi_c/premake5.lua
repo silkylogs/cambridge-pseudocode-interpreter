@@ -2,6 +2,7 @@ workspace "CambridgePseudocodeInterpeter"
    architecture "X86_64"
    configurations {
        "Debug",
+       "Test",
     --    "Release"
    }
 
@@ -16,7 +17,13 @@ project "CambridgePseudocodeInterpreter"
    targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
    objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")
 
-   files { "main.c", "bless.c", "bless.h" }
+   files { "bless.c", "bless.h" }
+
+   filter "configurations:Test"
+      files { "test.c" }
+      
+   filter "configurations:Debug"
+      files { "main.c" }
 
    -- Note: Place your raylib folder inside the third_party directory.
    -- libdirs { "third_party/raylib-5.0_win64_msvc16/lib" }
