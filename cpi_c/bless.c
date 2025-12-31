@@ -1,4 +1,115 @@
 #include "bless.h"
+#include <assert.h>
+
+#define assert_stringslice(str) assert(str.start != NULL);
+
+static size_t lesser(size_t a, size_t  b) { return (a < b) ? a : b; }
+
+//   foobar   -> foobar
+// ((foobar)) -> foobar
+// (foo(bar)) -> foo(bar)
+// ((foo)bar) -> (foo)bar
+static struct StringSlice strip_outermost_parens(struct StringSlice str) {
+	assert_stringslice(str);
+
+	char *it;
+	size_t lparen_cnt = 0;
+	size_t rparen_cnt = 0;
+	size_t least = 0;
+
+	for (it = str.start; it <= str.start + str.len; it += 1) {
+		if (*it == '(') lparen_cnt += 1;
+		else break;
+	}
+
+	for (it = str.start + str.len - 1; it > str.start; it -= 1) {
+		if (*it == ')') rparen_cnt += 1;
+		else break;
+	}
+
+	least = lesser(lparen_cnt, rparen_cnt);
+	str.start += least;
+	str.len -= least;
+
+	return str;
+}
+
+// ((...) + (...) * (...) - (...))
+// If not found, return NULL
+static char* find_topmost_leastpred_op_loc(struct StringSlice str) {
+	assert_stringslice(str);
+
+	struct StringSlice s = strip_outermost_parens(str);
+	char *top_it = NULL;
+
+	char *it = s.start;
+	while (it < s.start + s.len) {
+		if (*it == '(') {
+			it = corresp_rparen_addr(it) + 1;
+		} else if (*it == '+' || *it == '-') {
+			top_it = it;
+			it += 1;
+		}
+	}
+
+	it = s.start;
+	while (it < s.start + s.len) {
+		if (*it == '(') {
+			it = corresp_rparen_addr(it) + 1;
+		} else if (*it == '*') {
+			top_it = it;
+			it += 1;
+		}
+	}
+
+	it = s.start;
+	while (it < s.start + s.len) {
+		if (*it == '(') {
+			it = corresp_rparen_addr(it) + 1;
+		} else if (*it == '/') {
+			top_it = it;
+			it += 1;
+		}
+	}
+
+	return top_it;
+}
+
+// "... <whitespace> foo <whitespace> +" -> foo
+// "... <whitespace> (foo) <whitespace> +" -> (foo)
+static struct StringSlice str_lt_term(char *op_loc) {
+
+}
+
+static struct StringSlice str_rt_term(char *op_loc) {
+
+}
+
+// (a + b) * c
+// (...) * c
+// (...) + (...) * (...)
+// (...)
+double eval_expr(struct StringSlice str) {
+	// Find topmost operator or number. Ignore parenthesized terms.
+	char *op_loc = find_topmost_leastpred_op_loc(str);
+	if (op_loc_found(op_loc)) {
+		struct StringSlice str_lhs = str_lt_term(op_loc);
+		struct StringSlice str_rhs = str_rt_term(op_loc);
+
+		double lhs = eval_expr(str_lhs);
+		double rhs = eval_expr(str_rhs);
+
+		char op = op_kind(op_loc);
+
+		return eval_op(lhs, op, rhs);
+	} else {
+		// Strip parens, parse number within.
+		struct StringSlice num_str = strip_outermost_parens(str);
+		return str_to_num(num_str); // NaN if not a number.
+	}
+}
+
+// ---------------------------------------------------------------------------
 
 // is a character in a set of chars?
 // set is expected to be a c-string

@@ -6,6 +6,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+struct StringSlice {
+	char *start;
+	size_t len;
+};
+
+double eval_expr(struct StringSlice str);
 
 struct Int32Result {
 	int32_t val;
