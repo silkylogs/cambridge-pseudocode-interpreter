@@ -6,100 +6,192 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct StringSlice {
-	char *start;
-	size_t len;
-};
+// Virtual machine - Mirrors the kinds of statements the langauge can execute, but simpler.
+// 
+// # Statement types
+// - Declarations
+// - Assignments
+// - Branching
+// - Loops
+// - Definitions
+// - Commands
+//
+// # Declarations
+// Every variable or constant has a name. Therefore, the name can be used as a key to map it's value.
+// Declarations dont come with assignments.
+// - Variable
+// - Constant
+// - Array1D
+// - Array2D
+//
+// # Assignments
+// To simplify, this VM will not evaluate expressions. That is the job of the parser.
+// The VM will instead evaluate a simpler form, such as "res" = "arg1" op "arg2" (except for the unary operator)
+// ## Operations
+// Every number is a double. Or a double with it's fractional part truncated and masquerading as an integer.
+// - Addition    |--------------- Has lower predecence
+// - Subtraction |
+// - Multiplication |------------ Has higher predecence
+// - Division       |
+// - Greater than             |-- Has lowest predecence
+// - Lesser than              |
+// - Greater than or equal to |
+// - Lesser than or equal to  |
+// - Not equal to             |
+// - Equal to                 |
+// - Logical AND              |
+// - Logical OR               |
+// - Logical NOT              |
+// 
+// # Branching
+// if (condition) instr_ptr += offset;
+// - If
+// - If else
+// - Case
+// - Case otherwise
+//
+// # Loops
+// - For
+// - For with step
+// - Repeat until 
+// - While
+//
+// # Definitions
+// - Custom type. "foo.bar.baz" could be a key. Wait, everything's a double or a string.
+// - Procedure (returns nothing)
+// - Function (returns something)
+//
+// # Commands
+// - Call function
+// - Input... A num/string.
+// - Output... A string. Interpreter's job to do the parsing.
+// - File: open, read, write, close, seek
+// - Record: get, put
 
-double eval_expr(struct StringSlice str);
+struct Instr {
+	enum Kind {
+		DECL_VAR,
+		DECL_CONST,
+		DECL_ARR1D,
+		DECL_ARR2D,
 
-struct Int32Result {
-	int32_t val;
-	uint32_t res;
-};
+		ASS_ADD,
+		ASS_SUB,
+		ASS_MUL,
+		ASS_DIV,
+		ASS_GEQ,
+		ASS_LEQ,
+		ASS_GT,
+		ASS_LT,
+		ASS_EQ,
+		ASS_NEQ,
+		ASS_AND,
+		ASS_OR,
+		ASS_NOT,
 
-bool char_in(char c, const char *set);
-size_t count_longest_sequence_of_char_in_set(const char *str, size_t sz, const char *set);
-struct Int32Result ascii_string_to_int32(const char *str, size_t sz);
-float ascii_string_to_float(char const *str, size_t sz);
+		BR_IF,
+		BR_IF_ELSE,
+		BR_CASE,
+		BR_CASE_OTHERWISE,
 
-enum AtomicDataType { ADT_INTEGER, ADT_REAL, ADT_CHAR, ADT_STRING, ADT_BOOLEAN, ADT_DATE };
+		LOOP_FOR,
+		LOOP_FOR_STEP,
+		LOOP_REPEAT_UNTIL,
+		LOOP_WHILE,
 
-struct Date { int32_t day; int32_t month; int32_t year; };
+		DEFN_CUSTOM_TYPE,
+		DEFN_PROCEDURE,
+		DEFN_FUNCTION,
 
-struct Literal {
-	enum AtomicDataType kind;
-	union LiteralValue {
-		int32_t as_int32;
-		float as_float;
-		char as_char;
-		char *as_string;
-		bool as_boolean;
-		struct Date as_date;
-	} val;
-	bool is_valid;
-};
+		CMD_CALL,
+		CMD_INPUT,
+		CMD_OUTPUT,
+		CMD_FILE_OPEN,
+		CMD_FILE_READ,
+		CMD_FILE_WRITE,
+		CMD_FILE_CLOSE,
+		CMD_FILE_SEEK,
+		CMD_RECORD_GET,
+		CMD_RECORD_PUT,
+	} kind;
 
-bool literal_shallow_equality(struct Literal lit1, struct Literal lit2);
+	// Parameters. Use whatever parameter from here where appropriate.
+	// Note: Strings are null terminated.
+	char *param_decl_var_name;
+	char *param_decl_var_type;
 
-struct Literal try_parse_literal(const char *str, size_t sz);
+	char *param_decl_const_name;
+	char *param_decl_const_type;
 
-/* TODO: Implement as ECS, current approach is not maintainable.
-// Idea: Have a container of atomic datatypes,
-struct ProgramData {
-	int32_t integers[SZ];
-	float floats[SZ];
-	char chars[SZ];
-	struct String strings[SZ];
-	bool booleans[SZ];
-	struct Date dates[SZ];
+	char *param_decl_arr1d_name;
+	char *param_decl_arr1d_type;
+	double param_decl_arr1d_bound_lower;
+	double param_decl_arr1d_bound_upper;
 
-	char *identifier_or_literal_names;
-};
-// And another of custom types
-struct CustomType {
+	char *param_decl_arr2d_name;
+	char *param_decl_arr2d_type;
+	double param_decl_arr2d_dim0_bound_lower;
+	double param_decl_arr2d_dim0_bound_upper;
+	double param_decl_arr2d_dim1_bound_lower;
+	double param_decl_arr2d_dim1_bound_upper;
+
+	// The operation type (add, sub, etc) should be derived from the kind of operation.
+	char *param_ass_result_name;
+	char *param_ass_param0_name;
+	char *param_ass_param1_name;
+
+	// "If condition is true, execute this *reigon* of code. Else skip over that reigon.
+	char *param_br_if_condition;
+	double param_br_if_reigon_len;
+	double param_br_if_else_reigon_len; // if (foo) ... else ... [The else conditoin cannot exist without the if]
 	
-};*/
+	double param_br_case_condition;
+	double param_br_case_reigon_len;
+	char **param_br_case_values;
+	double *param_br_case_value_reigons;
+	double param_br_case_value_cnt;
 
+	char *loop_for_identifier_name;
+	char *loop_for_value0_name;
+	char *loop_for_value1_name;
+	char *loop_for_step_name;
+	double loop_for_reigon_len;
 
-enum StatementType {
-	STMT_VAR_DECL,
-	STMT_CONST_DECL,
-	STMT_1D_ARRAY_DECL,
-	STMT_2D_ARRAY_DECL,
-	STMT_INPUT,
-	STMT_OUTPUT,
-	STMT_OPENFILE,
-	STMT_READFILE,
-	STMT_WRITEFILE,
-	STMT_CLOSEFILE,
-	STMT_SEEK,
-	STMT_GETRECORD,
-	STMT_PUTRECORD,
-	STMT_CUSTOM_TYPE_DEFN,
-	STMT_ASSIGNMENT,
-	STMT_CONDITIONAL,
-	STMT_CASE,
-	STMT_FOR_LOOP,
-	STMT_REPEAT_UNTIL_LOOP,
-	STMT_WHILE_LOOP,
-	STMT_PROC_DEFN,
-	STMT_CALL,
-	STMT_FN_DEFN,
+	char *loop_repeat_until_condition_name;
+	double loop_repeat_until_reigon_len;
+
+	char *loop_while_condition_name;
+	double loop_while_reigon_len;
+
+	char *defn_custom_type_name;
+	char *defn_custom_type_type;
+
+	char *defn_procedure_name;
+	double defn_procedure_reigon_len;
+
+	char *defn_function_name;
+	char *defn_function_ret_value_name;
+	double defn_function_reigon_len;
+
+	char *cmd_call_name;
+	char *cmd_input_name;
+	char *cmd_output_str;
+
+	char *cmd_file_open_identifier;
+	char *cmd_file_open_mode;
+	char *cmd_file_read_identifier;
+	char *cmd_file_read_variable;
+	char *cmd_file_write_identifier;
+	char *cmd_file_write_filename;
+	char *cmd_file_close_identifier;
+	char *cmd_file_seek_identifier;
+	double cmd_file_seek_address;
+	char *cmd_record_get_identifier;
+	char *cmd_record_get_variable;
+	char *cmd_record_put_identifier;
+	char *cmd_record_put_variable;
 };
 
-struct StatementTypeAndBounds {
-	enum StatementType type;
-	char *start;
-	size_t size;
-};
-
-// Inteneded loop:
-// stmt = get_statement(ptr);
-// exec_stmt(stmt);
-// ptr += stmt.size;
-struct StatementTypeAndBounds get_statement(const char *ptr);
-void exec_stmt(struct StatementTypeAndBounds stmt);
 
 #endif
 
