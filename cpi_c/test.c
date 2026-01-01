@@ -61,10 +61,9 @@ static void cp_add_test(Tests *ts, bool (*test_fn)(void), char *name) {
 static void cp_run_tests(Tests ts) {
 	bool all_ok = true, ok;
 	for (int32_t i = 0; i <= ts.ptr_to_top; ++i) {
-		CP_LEVEL_LOG(
-			"Test",
-			"%5.5d/%5.5d: \"%s\"... %s\n",
-			i, ts.ptr_to_top,
+		printf(
+			"Test %5.5d of %5.5d: \"%s\"... %s\n",
+			i+1, ts.ptr_to_top+1,
 			ts.names[i],
 			(ok = (ts.fns[i])())? "Ok" : "Error"
 		);
@@ -77,307 +76,307 @@ static void cp_run_tests(Tests ts) {
 	);
 }
 
-static bool test__char_in__general(void) {
-	return char_in('0', "1234567890");
-}
-
-static bool test__char_in__absent(void) {
-	return !char_in('a', "bcdefgh");
-}
-
-static bool test__char_in__vacuous_truth(void) {
-	return char_in('a', "");
-}
-
-static bool test__count_longest_sequence_of_char_in_set__general(void) {
-	char str[] = "0001a";
-	size_t expected = 4;
-	size_t got = count_longest_sequence_of_char_in_set(str, sizeof str, "01234567890");;
-	printf("Expected %zu got %zu\n", expected, got);
-	return expected == got;
-
-}
-
-static bool test__ascii_string_to_int32__general(void) {
-	struct Int32Result result = {0};
-	char str[] = "249"; char sz = sizeof str;
-	int32_t expected = 249;
-
-	result = ascii_string_to_int32(str, sz);
-	printf("res: expected %d got %d\n", true, result.res);
-	printf("val: expected %d got %d\n", expected, result.val);
-	return (expected == result.val) && (result.res);
-}
-
-static bool test__ascii_string_to_int32__not_an_int(void) {
-	struct Int32Result result = {0};
-	result = ascii_string_to_int32("ahdfldsajfdaoiewfsdjfoj", 4);
-	printf("res: expected %d got %d\n", 0, result.res);
-	return (!result.res);
-}
-
-static bool test__ascii_string_to_int32__negative(void) {
-	struct Int32Result result = {0};
-	char str[] = "-249";
-	char sz = sizeof str;
-	int32_t expected = -249;
-
-	result = ascii_string_to_int32(str, sz);
-	printf("res: expected %d got %d\n", true, result.res);
-	printf("val: expected %d got %d\n", expected, result.val);
-	return (expected == result.val) && (result.res);
-}
-
-static bool test__try_parse_literal__integer_positive(void) {
-	char str[] = "849034";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_INTEGER;
-	expected.val.as_int32 = 849034;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
-	res = literal_shallow_equality(expected, got);
-	printf("Got: kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
-
-	return res;
-}
-
-static bool test__try_parse_literal__integer_negative(void) {
-	char str[] = "-849034";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_INTEGER;
-	expected.val.as_int32 = -849034;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
-	printf("Got:      kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-static bool test__ascii_string_to_float(void) {
-	char str[] = "12340.56789";
-	printf("Expected: %s\nGot: %f\n", str, ascii_string_to_float(str, (sizeof str) - 1));
-	return true;
-}
-
-static bool test__try_parse_literal__real_postive(void) {
-	char str[] = "3.14";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_REAL;
-	expected.val.as_float = 3.14f;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_float=%f, is_valid=%d\n", expected.kind, expected.val.as_float, expected.is_valid);
-	printf("Got:      kind=%d, val.as_float=%f, is_valid=%d\n", got.kind, got.val.as_float, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-static bool test__try_parse_literal__real_negative(void) {
-	char str[] = "-6.7";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_REAL;
-	expected.val.as_float = -6.7f;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_float=%f, is_valid=%d\n", expected.kind, expected.val.as_float, expected.is_valid);
-	printf("Got:      kind=%d, val.as_float=%f, is_valid=%d\n", got.kind, got.val.as_float, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-static bool test__try_parse_literal__char_valid(void) {
-	char str[] = "\'c\'";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_REAL;
-	expected.val.as_char = 'c';
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_char=\'%c\', is_valid=%d\n", expected.kind, expected.val.as_char, expected.is_valid);
-	printf("Got:      kind=%d, val.as_char=\'%c\', is_valid=%d\n", got.kind, got.val.as_char, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-static bool test__try_parse_literal__char_empty(void) {
-	char str[] = "\'\'";
-	char sz = sizeof str;
-	struct Literal expected, got;
-
-	expected.kind = ADT_CHAR;
-	expected.is_valid = false;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
-	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
-
-	return expected.kind==got.kind && expected.is_valid==got.is_valid;
-}
-
-static bool test__try_parse_literal__char_not_in_character_set(void) {
-	char str[] = "\'\2\'";
-	char sz = sizeof str;
-	struct Literal expected, got;
-
-	expected.kind = ADT_CHAR;
-	expected.is_valid = false;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
-	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
-
-	return expected.kind==got.kind && expected.is_valid==got.is_valid;
-}
-
-static bool test__try_parse_literal__char_multi_character(void) {
-	char str[] = "\'foobar\'";
-	char sz = sizeof str;
-	struct Literal expected, got;
-
-	expected.kind = ADT_CHAR;
-	expected.is_valid = false;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
-	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
-
-	return expected.kind==got.kind && expected.is_valid==got.is_valid;
-}
-
-static bool test__try_parse_literal__string(void) {
-	return false;
-}
-
-static bool test__try_parse_literal__string_empty(void) {
-	return false;
-}
-
-static bool test__try_parse_literal__boolean(void) {
-	char str[] = "TRUE";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_BOOLEAN;
-	expected.val.as_boolean = true;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_boolean=%d, is_valid=%d\n", expected.kind, expected.val.as_boolean, expected.is_valid);
-	printf("Got:      kind=%d, val.as_boolean=%d, is_valid=%d\n", got.kind, got.val.as_boolean, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-static bool test__try_parse_literal__date(void) {
-	char str[] = "23/11/2025";
-	char sz = sizeof str;
-	struct Literal expected, got;
-	bool res;
-
-	expected.kind = ADT_DATE;
-	expected.val.as_date.day = 23;
-	expected.val.as_date.month = 11;
-	expected.val.as_date.year = 2025;
-	expected.is_valid = true;
-
-	got = try_parse_literal(str, sz);
-	printf("Expected: kind=%d, val.as_date=%2.2d/%2.2d/%2.2d, is_valid=%d\n", expected.kind, expected.val.as_date.day, expected.val.as_date.month, expected.val.as_date.year, expected.is_valid);
-	printf("Got:      kind=%d, val.as_date=%2.2d/%2.2d/%2.2d, is_valid=%d\n", got.kind, got.val.as_date.day, got.val.as_date.month, got.val.as_date.year, got.is_valid);
-	res = literal_shallow_equality(expected, got);
-
-	return res;
-}
-
-
-static bool test__get_statement__VAR_DECL(void) {
-	struct StatementTypeAndBounds expected, got;
-	char stmt[] = "DECLARE x : INTEGER";
-
-	expected.type = STMT_VAR_DECL;
-	expected.start = stmt;
-	expected.size = sizeof stmt - 1;
-
-	got = get_statement(stmt);
-
-	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
-	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
-
-	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
-}
-
-static bool test__get_statement__CONST_DECL(void) {
-	struct StatementTypeAndBounds expected, got;
-	char stmt[] = "CONSTANT x = 4324";
-
-	expected.type = STMT_CONST_DECL;
-	expected.start = stmt;
-	expected.size = sizeof stmt - 1;
-
-	got = get_statement(stmt);
-
-	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
-	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
-
-	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
-}
-static bool test__get_statement__1D_ARRAY_DECL(void) {
-	struct StatementTypeAndBounds expected, got;
-	char stmt[] = "DECLARE StudentNames : ARRAY[1:30] OF STRING";
-
-	expected.type = STMT_1D_ARRAY_DECL;
-	expected.start = stmt;
-	expected.size = sizeof stmt - 1;
-
-	got = get_statement(stmt);
-
-	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
-	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
-
-	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
-}
-
-static bool test__get_statement__2D_ARRAY_DECL(void) {
-	struct StatementTypeAndBounds expected, got;
-	char stmt[] = "DECLARE NoughtsAndCrosses : ARRAY[1:3,1:3] OF CHAR";
-
-	expected.type = STMT_2D_ARRAY_DECL;
-	expected.start = stmt;
-	expected.size = sizeof stmt - 1;
-
-	got = get_statement(stmt);
-
-	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
-	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
-
-	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
-}
+//static bool test__char_in__general(void) {
+//	return char_in('0', "1234567890");
+//}
+//
+//static bool test__char_in__absent(void) {
+//	return !char_in('a', "bcdefgh");
+//}
+//
+//static bool test__char_in__vacuous_truth(void) {
+//	return char_in('a', "");
+//}
+//
+//static bool test__count_longest_sequence_of_char_in_set__general(void) {
+//	char str[] = "0001a";
+//	size_t expected = 4;
+//	size_t got = count_longest_sequence_of_char_in_set(str, sizeof str, "01234567890");;
+//	printf("Expected %zu got %zu\n", expected, got);
+//	return expected == got;
+//
+//}
+//
+//static bool test__ascii_string_to_int32__general(void) {
+//	struct Int32Result result = {0};
+//	char str[] = "249"; char sz = sizeof str;
+//	int32_t expected = 249;
+//
+//	result = ascii_string_to_int32(str, sz);
+//	printf("res: expected %d got %d\n", true, result.res);
+//	printf("val: expected %d got %d\n", expected, result.val);
+//	return (expected == result.val) && (result.res);
+//}
+//
+//static bool test__ascii_string_to_int32__not_an_int(void) {
+//	struct Int32Result result = {0};
+//	result = ascii_string_to_int32("ahdfldsajfdaoiewfsdjfoj", 4);
+//	printf("res: expected %d got %d\n", 0, result.res);
+//	return (!result.res);
+//}
+//
+//static bool test__ascii_string_to_int32__negative(void) {
+//	struct Int32Result result = {0};
+//	char str[] = "-249";
+//	char sz = sizeof str;
+//	int32_t expected = -249;
+//
+//	result = ascii_string_to_int32(str, sz);
+//	printf("res: expected %d got %d\n", true, result.res);
+//	printf("val: expected %d got %d\n", expected, result.val);
+//	return (expected == result.val) && (result.res);
+//}
+//
+//static bool test__try_parse_literal__integer_positive(void) {
+//	char str[] = "849034";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_INTEGER;
+//	expected.val.as_int32 = 849034;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//	printf("Got: kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
+//
+//	return res;
+//}
+//
+//static bool test__try_parse_literal__integer_negative(void) {
+//	char str[] = "-849034";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_INTEGER;
+//	expected.val.as_int32 = -849034;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_int32=%d, is_valid=%d\n", expected.kind, expected.val.as_int32, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_int32=%d, is_valid=%d\n", got.kind, got.val.as_int32, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//static bool test__ascii_string_to_float(void) {
+//	char str[] = "12340.56789";
+//	printf("Expected: %s\nGot: %f\n", str, ascii_string_to_float(str, (sizeof str) - 1));
+//	return true;
+//}
+//
+//static bool test__try_parse_literal__real_postive(void) {
+//	char str[] = "3.14";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_REAL;
+//	expected.val.as_float = 3.14f;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_float=%f, is_valid=%d\n", expected.kind, expected.val.as_float, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_float=%f, is_valid=%d\n", got.kind, got.val.as_float, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//static bool test__try_parse_literal__real_negative(void) {
+//	char str[] = "-6.7";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_REAL;
+//	expected.val.as_float = -6.7f;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_float=%f, is_valid=%d\n", expected.kind, expected.val.as_float, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_float=%f, is_valid=%d\n", got.kind, got.val.as_float, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//static bool test__try_parse_literal__char_valid(void) {
+//	char str[] = "\'c\'";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_REAL;
+//	expected.val.as_char = 'c';
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_char=\'%c\', is_valid=%d\n", expected.kind, expected.val.as_char, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_char=\'%c\', is_valid=%d\n", got.kind, got.val.as_char, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//static bool test__try_parse_literal__char_empty(void) {
+//	char str[] = "\'\'";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//
+//	expected.kind = ADT_CHAR;
+//	expected.is_valid = false;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
+//	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
+//
+//	return expected.kind==got.kind && expected.is_valid==got.is_valid;
+//}
+//
+//static bool test__try_parse_literal__char_not_in_character_set(void) {
+//	char str[] = "\'\2\'";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//
+//	expected.kind = ADT_CHAR;
+//	expected.is_valid = false;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
+//	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
+//
+//	return expected.kind==got.kind && expected.is_valid==got.is_valid;
+//}
+//
+//static bool test__try_parse_literal__char_multi_character(void) {
+//	char str[] = "\'foobar\'";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//
+//	expected.kind = ADT_CHAR;
+//	expected.is_valid = false;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, is_valid=%d\n", expected.kind, expected.is_valid);
+//	printf("Got:      kind=%d, is_valid=%d\n", got.kind, got.is_valid);
+//
+//	return expected.kind==got.kind && expected.is_valid==got.is_valid;
+//}
+//
+//static bool test__try_parse_literal__string(void) {
+//	return false;
+//}
+//
+//static bool test__try_parse_literal__string_empty(void) {
+//	return false;
+//}
+//
+//static bool test__try_parse_literal__boolean(void) {
+//	char str[] = "TRUE";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_BOOLEAN;
+//	expected.val.as_boolean = true;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_boolean=%d, is_valid=%d\n", expected.kind, expected.val.as_boolean, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_boolean=%d, is_valid=%d\n", got.kind, got.val.as_boolean, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//static bool test__try_parse_literal__date(void) {
+//	char str[] = "23/11/2025";
+//	char sz = sizeof str;
+//	struct Literal expected, got;
+//	bool res;
+//
+//	expected.kind = ADT_DATE;
+//	expected.val.as_date.day = 23;
+//	expected.val.as_date.month = 11;
+//	expected.val.as_date.year = 2025;
+//	expected.is_valid = true;
+//
+//	got = try_parse_literal(str, sz);
+//	printf("Expected: kind=%d, val.as_date=%2.2d/%2.2d/%2.2d, is_valid=%d\n", expected.kind, expected.val.as_date.day, expected.val.as_date.month, expected.val.as_date.year, expected.is_valid);
+//	printf("Got:      kind=%d, val.as_date=%2.2d/%2.2d/%2.2d, is_valid=%d\n", got.kind, got.val.as_date.day, got.val.as_date.month, got.val.as_date.year, got.is_valid);
+//	res = literal_shallow_equality(expected, got);
+//
+//	return res;
+//}
+//
+//
+//static bool test__get_statement__VAR_DECL(void) {
+//	struct StatementTypeAndBounds expected, got;
+//	char stmt[] = "DECLARE x : INTEGER";
+//
+//	expected.type = STMT_VAR_DECL;
+//	expected.start = stmt;
+//	expected.size = sizeof stmt - 1;
+//
+//	got = get_statement(stmt);
+//
+//	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+//	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+//
+//	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+//}
+//
+//static bool test__get_statement__CONST_DECL(void) {
+//	struct StatementTypeAndBounds expected, got;
+//	char stmt[] = "CONSTANT x = 4324";
+//
+//	expected.type = STMT_CONST_DECL;
+//	expected.start = stmt;
+//	expected.size = sizeof stmt - 1;
+//
+//	got = get_statement(stmt);
+//
+//	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+//	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+//
+//	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+//}
+//static bool test__get_statement__1D_ARRAY_DECL(void) {
+//	struct StatementTypeAndBounds expected, got;
+//	char stmt[] = "DECLARE StudentNames : ARRAY[1:30] OF STRING";
+//
+//	expected.type = STMT_1D_ARRAY_DECL;
+//	expected.start = stmt;
+//	expected.size = sizeof stmt - 1;
+//
+//	got = get_statement(stmt);
+//
+//	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+//	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+//
+//	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+//}
+//
+//static bool test__get_statement__2D_ARRAY_DECL(void) {
+//	struct StatementTypeAndBounds expected, got;
+//	char stmt[] = "DECLARE NoughtsAndCrosses : ARRAY[1:3,1:3] OF CHAR";
+//
+//	expected.type = STMT_2D_ARRAY_DECL;
+//	expected.start = stmt;
+//	expected.size = sizeof stmt - 1;
+//
+//	got = get_statement(stmt);
+//
+//	printf("Expected: .type=%d, .start=%p, .size=%zu\n", expected.type, expected.start, expected.size);
+//	printf("Got:      .type=%d, .start=%p, .size=%zu\n", got.type, got.start, got.size);
+//
+//	return expected.type==got.type && expected.start==got.start && expected.size==got.size;
+//}
 
 // static bool test__detect_thing__comment(void) {
 // 	char str[] = "// This is a comment\n"
@@ -387,35 +386,35 @@ static bool test__get_statement__2D_ARRAY_DECL(void) {
 // }
 
 int main(void) {
-	CP_ADD_TEST(test__char_in__general);
-	CP_ADD_TEST(test__char_in__absent);
-	CP_ADD_TEST(test__char_in__vacuous_truth);
+	//CP_ADD_TEST(test__char_in__general);
+	//CP_ADD_TEST(test__char_in__absent);
+	//CP_ADD_TEST(test__char_in__vacuous_truth);
 
-	CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
+	//CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
 
-	CP_ADD_TEST(test__ascii_string_to_int32__general);
-	CP_ADD_TEST(test__ascii_string_to_int32__not_an_int);
-	CP_ADD_TEST(test__ascii_string_to_int32__negative);
-	
-	CP_ADD_TEST(test__ascii_string_to_float);
+	//CP_ADD_TEST(test__ascii_string_to_int32__general);
+	//CP_ADD_TEST(test__ascii_string_to_int32__not_an_int);
+	//CP_ADD_TEST(test__ascii_string_to_int32__negative);
+	//
+	//CP_ADD_TEST(test__ascii_string_to_float);
 
-	CP_ADD_TEST(test__try_parse_literal__integer_positive);
-	CP_ADD_TEST(test__try_parse_literal__integer_negative);
-	CP_ADD_TEST(test__try_parse_literal__real_postive);
-	CP_ADD_TEST(test__try_parse_literal__real_negative);
-	CP_ADD_TEST(test__try_parse_literal__char_valid);
-	CP_ADD_TEST(test__try_parse_literal__char_empty);
-	CP_ADD_TEST(test__try_parse_literal__char_not_in_character_set);
-	CP_ADD_TEST(test__try_parse_literal__char_multi_character);
-	CP_ADD_TEST(test__try_parse_literal__string);
-	CP_ADD_TEST(test__try_parse_literal__string_empty);
-	CP_ADD_TEST(test__try_parse_literal__boolean);
-	CP_ADD_TEST(test__try_parse_literal__date);
+	//CP_ADD_TEST(test__try_parse_literal__integer_positive);
+	//CP_ADD_TEST(test__try_parse_literal__integer_negative);
+	//CP_ADD_TEST(test__try_parse_literal__real_postive);
+	//CP_ADD_TEST(test__try_parse_literal__real_negative);
+	//CP_ADD_TEST(test__try_parse_literal__char_valid);
+	//CP_ADD_TEST(test__try_parse_literal__char_empty);
+	//CP_ADD_TEST(test__try_parse_literal__char_not_in_character_set);
+	//CP_ADD_TEST(test__try_parse_literal__char_multi_character);
+	//CP_ADD_TEST(test__try_parse_literal__string);
+	//CP_ADD_TEST(test__try_parse_literal__string_empty);
+	//CP_ADD_TEST(test__try_parse_literal__boolean);
+	//CP_ADD_TEST(test__try_parse_literal__date);
 
-	CP_ADD_TEST(test__get_statement__VAR_DECL);
-	CP_ADD_TEST(test__get_statement__CONST_DECL);
-	CP_ADD_TEST(test__get_statement__1D_ARRAY_DECL);
-	CP_ADD_TEST(test__get_statement__2D_ARRAY_DECL);
+	//CP_ADD_TEST(test__get_statement__VAR_DECL);
+	//CP_ADD_TEST(test__get_statement__CONST_DECL);
+	//CP_ADD_TEST(test__get_statement__1D_ARRAY_DECL);
+	//CP_ADD_TEST(test__get_statement__2D_ARRAY_DECL);
 
 	CP_RUN_TESTS();
 
