@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "bless.h"
+#include "vm.h"
 
 int main(void) {
 	//int32_t num;
