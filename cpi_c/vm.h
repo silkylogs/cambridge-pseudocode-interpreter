@@ -1,5 +1,5 @@
-#ifndef BLESS_H
-#define BLESS_H
+#ifndef CPI_VM_H
+#define CPI_VM_H
 
 #include <stdio.h>
 #include <string.h>
