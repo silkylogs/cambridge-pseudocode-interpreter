@@ -79,39 +79,19 @@ static void cp_run_tests(Tests ts) {
 	);
 }
 
-// -----------------------------------------------------------------
+// ---------------------------------------------------------
 
+bool test__vm_decl_var__(void) {
+	// Note for testing:
+	// - Test preconditions
+	// - Test postconditions
+	return false;
+}
+
+// ---------------------------------------------------------
 
 int main(void) {
-	//CP_ADD_TEST(test__char_in__general);
-	//CP_ADD_TEST(test__char_in__absent);
-	//CP_ADD_TEST(test__char_in__vacuous_truth);
-
-	//CP_ADD_TEST(test__count_longest_sequence_of_char_in_set__general);
-
-	//CP_ADD_TEST(test__ascii_string_to_int32__general);
-	//CP_ADD_TEST(test__ascii_string_to_int32__not_an_int);
-	//CP_ADD_TEST(test__ascii_string_to_int32__negative);
-	//
-	//CP_ADD_TEST(test__ascii_string_to_float);
-
-	//CP_ADD_TEST(test__try_parse_literal__integer_positive);
-	//CP_ADD_TEST(test__try_parse_literal__integer_negative);
-	//CP_ADD_TEST(test__try_parse_literal__real_postive);
-	//CP_ADD_TEST(test__try_parse_literal__real_negative);
-	//CP_ADD_TEST(test__try_parse_literal__char_valid);
-	//CP_ADD_TEST(test__try_parse_literal__char_empty);
-	//CP_ADD_TEST(test__try_parse_literal__char_not_in_character_set);
-	//CP_ADD_TEST(test__try_parse_literal__char_multi_character);
-	//CP_ADD_TEST(test__try_parse_literal__string);
-	//CP_ADD_TEST(test__try_parse_literal__string_empty);
-	//CP_ADD_TEST(test__try_parse_literal__boolean);
-	//CP_ADD_TEST(test__try_parse_literal__date);
-
-	//CP_ADD_TEST(test__get_statement__VAR_DECL);
-	//CP_ADD_TEST(test__get_statement__CONST_DECL);
-	//CP_ADD_TEST(test__get_statement__1D_ARRAY_DECL);
-	//CP_ADD_TEST(test__get_statement__2D_ARRAY_DECL);
+	CP_ADD_TEST(test__vm_decl_var__);
 
 	CP_RUN_TESTS();
 
