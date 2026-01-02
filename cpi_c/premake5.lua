@@ -17,7 +17,7 @@ project "CambridgePseudocodeInterpreter"
    targetdir ("bin/"          .. output_dir .. "/%{prj.name}")
    objdir    ("bin-temp-obj/" .. output_dir .. "/%{prj.name}")
 
-   files { "bless.c", "bless.h" }
+   files { "vm.c", "vm.h" }
 
    filter "configurations:Test"
       files { "test.c" }
@@ -52,6 +52,7 @@ project "CambridgePseudocodeInterpreter"
          4100, -- unreferenced formal parameter
          4189, -- local variable is initialized but not referenced
          4101, -- unreferenced local variable
+         4996, -- Function is unsafe.
       }
 
    filter "system:linux"
