@@ -24,6 +24,10 @@ static char *atomic_type_default_value(char *t) {
     else assert(!"Error: Attempt to construct default value of illegal atomic type");
 }
 
+bool type_is_custom(struct CustomTypes *ts, char *typename) {
+    assert(!"todo");
+}
+
 // -----------------------------------------------------------------
 
 static void vm_add_atomic_var(struct VmState *state, struct Var var) {
@@ -45,7 +49,7 @@ static void vm_decl_var(struct VmState *state, struct Instr *instr) {
         var.value = strdup(atomic_type_default_value(var.typename));
         vm_add_atomic_var(state, var);
     }
-    else if (type_is_custom(state->custom_types, var.typename)) {
+    else if (type_is_custom(&state->custom_types, var.typename)) {
         vm_add_custom_type_var(state, &state->custom_types, var.typename);
     }
     else {
