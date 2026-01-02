@@ -162,12 +162,26 @@ struct Instr {
 
 
 struct VmState {
-    struct Var {
-        char *name;
-        char *value;
-        char *typename;
-    } *vars;
-    size_t var_count;
+    struct Vars {
+        struct Var {
+            char *name;
+            char *value;
+            char *typename;
+        } *vars;
+        size_t len;
+    } variables;
+
+    struct CustomTypes {
+        struct CustomType {
+            char *name;
+            struct Member {
+                char *name;
+                char *type;
+            } *members;
+            size_t member_count;
+        } *types;
+        size_t len;
+    } custom_types;
 };
 
 void vm_exe_instr(struct VmState *state, struct Instr *instr);
