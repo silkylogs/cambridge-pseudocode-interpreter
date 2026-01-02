@@ -1,7 +1,56 @@
 #include "vm.h"
 #include <assert.h>
 
+static bool type_is_atomic(char *t) {
+    if (0 == strcmp(t, "INTEGER")
+        || 0 == strcmp(t, "REAL")
+        || 0 == strcmp(t, "CHAR")
+        || 0 == strcmp(t, "STRING")
+        || 0 == strcmp(t, "BOOLEAN")
+        || 0 == strcmp(t, "DATE")
+        ) {
+        return true;
+    }
+    else return false;
+}
+
+static char *atomic_type_default_value(char *t) {
+    if (0 == strcmp(t, "INTEGER")) return "0";
+    else if (0 == strcmp(t, "REAL")) return "0.0";
+    else if (0 == strcmp(t, "CHAR")) return "\0";
+    else if (0 == strcmp(t, "STRING")) return "";
+    else if (0 == strcmp(t, "BOOLEAN")) return "false";
+    else if (0 == strcmp(t, "DATE")) return "00/00/0000";
+    else assert(!"Error: Attempt to construct default value of illegal atomic type");
+}
+
+// -----------------------------------------------------------------
+
+static void vm_add_atomic_var(struct VmState *state, struct Var var) {
+    assert(!"Todo");
+}
+
+static void vm_add_custom_type_var(struct VmState *state, struct CustomTypes *custom_types, char *typename) {
+    assert(!"Todo");
+}
+
+// -----------------------------------------------------------------
+
 static void vm_decl_var(struct VmState *state, struct Instr *instr) {
+    struct Var var = { 0 };
+    var.name = strdup(instr->param_decl_var_name);
+    var.typename = strdup(instr->param_decl_var_type);
+
+    if (type_is_atomic(var.typename)) {
+        var.value = strdup(atomic_type_default_value(var.typename));
+        vm_add_atomic_var(state, var);
+    }
+    else if (type_is_custom(state->custom_types, var.typename)) {
+        vm_add_custom_type_var(state, &state->custom_types, var.typename);
+    }
+    else {
+        assert(!"Error: Attempt to declare value of invalid type");
+    }
 
 }
 
@@ -153,6 +202,8 @@ static void vm_cmd_record_put(struct VmState *state, struct Instr *instr) {
 
 }
 
+// -----------------------------------------------------------------
+
 
 void vm_exe_instr(struct VmState *state, struct Instr *instr) {
     switch (instr->kind) {
@@ -197,3 +248,6 @@ void vm_exe_instr(struct VmState *state, struct Instr *instr) {
     default: { assert(!"panic! unreachable instruction\n"); break; }
     }
 }
+
+// -----------------------------------------------------------------
+
