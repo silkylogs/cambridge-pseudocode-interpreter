@@ -83,81 +83,102 @@ struct Instr {
         CMD_CALL, CMD_INPUT, CMD_OUTPUT, CMD_FILE_OPEN, CMD_FILE_READ, CMD_FILE_WRITE, CMD_FILE_CLOSE, CMD_FILE_SEEK, CMD_RECORD_GET, CMD_RECORD_PUT,
     } kind;
 
-    // Parameters. Use whatever parameter from here where appropriate.
-    // Note: Strings are null terminated.
-    char *param_decl_var_name;
-    char *param_decl_var_type;
+    // All strings are null terminated.
+    // The string may encode a numeric type.
+    union Parameters {
+        struct ParamDeclVar {
+            char *name;
+            char *type;
+        } decl_var;
 
-    char *param_decl_const_name;
-    char *param_decl_const_type;
+        struct ParamDeclConst {
+            char *name;
+            char *type;
+        } decl_const;
 
-    char *param_decl_arr1d_name;
-    char *param_decl_arr1d_type;
-    char *param_decl_arr1d_bound_lower;
-    char *param_decl_arr1d_bound_upper;
+        struct ParamDeclArr1d {
+            char *name;
+            char *type;
+            char *bound_lower;
+            char *bound_upper;
+        } decl_arr1d;
 
-    char *param_decl_arr2d_name;
-    char *param_decl_arr2d_type;
-    char *param_decl_arr2d_dim0_bound_lower;
-    char *param_decl_arr2d_dim0_bound_upper;
-    char *param_decl_arr2d_dim1_bound_lower;
-    char *param_decl_arr2d_dim1_bound_upper;
+        struct ParamDeclArr2d {
+            char *name;
+            char *type;
+            char *dim0_bound_lower;
+            char *dim0_bound_upper;
+            char *dim1_bound_lower;
+            char *dim1_bound_upper;
+        } decl_arr2d;
 
-    // The operation type (add, sub, etc) should be derived from the kind of operation.
-    char *param_ass_result_name;
-    char *param_ass_param0_name;
-    char *param_ass_param1_name;
+        // The operation type (add, sub, etc) should be derived from the kind of operation.
+        struct ParamAssignment {
+            char *result;
+            char *param0;
+            char *param1;
+        } ass;
 
-    // "If condition is true, execute this *reigon* of code. Else skip over that reigon.
-    char *param_br_if_condition;
-    char *param_br_if_reigon_len;
-    char *param_br_if_else_reigon_len; // if (foo) ... else ... [The else conditoin cannot exist without the if]
+        // "If condition is true, execute this *reigon* of code. Else skip over that reigon."
+        struct ParamBrIf {
+            char *condition;
+            char *if_reigon_len;
+            char *else_reigon_len; // if (foo) ... else ... [The else conditoin cannot exist without the if]
+        } br_if;
 
-    char *param_br_case_condition;
-    char *param_br_case_reigon_len;
-    char **param_br_case_values;
-    char **param_br_case_value_reigons;
-    char *param_br_case_value_cnt;
+        struct ParamBrCase {
+            char *condition;
+            char *reigon_len;
+            char **values;
+            char **value_reigons;
+            char *value_cnt;
+        } br_case;
 
-    char *loop_for_identifier_name;
-    char *loop_for_value0_name;
-    char *loop_for_value1_name;
-    char *loop_for_step_name;
-    char *loop_for_reigon_len;
+        struct ParamLoopFor {
+            char *identifier_name;
+            char *value0_name;
+            char *value1_name;
+            char *step_name;
+            char *reigon_len;
+        } loop_for;
 
-    char *loop_repeat_until_condition_name;
-    char *loop_repeat_until_reigon_len;
+        struct ParamLoopRepeatUntil {
+            char *condition_name;
+            char *reigon_len;
+        } loop_repeat_until;
 
-    char *loop_while_condition_name;
-    char *loop_while_reigon_len;
+        struct ParamLoopWhile {
+            char *condition_name;
+            char *reigon_len;
+        } loop_while;
 
-    char *defn_custom_type_name;
-    char *defn_custom_type_type;
+        struct ParamDefnCustomType {
+            char *name;
+            char *type;
+        } defn_custom_type;
 
-    char *defn_procedure_name;
-    char *defn_procedure_reigon_len;
+        struct ParamDefnProcedure {
+            char *name;
+            char *reigon_len;
+        } defn_procedure;
 
-    char *defn_function_name;
-    char *defn_function_ret_value_name;
-    char *defn_function_reigon_len;
+        struct ParamDefnFunction {
+            char *name;
+            char *ret_value_name;
+            char *reigon_len;
+        } defn_function;
 
-    char *cmd_call_name;
-    char *cmd_input_name;
-    char *cmd_output_str;
-
-    char *cmd_file_open_identifier;
-    char *cmd_file_open_mode;
-    char *cmd_file_read_identifier;
-    char *cmd_file_read_variable;
-    char *cmd_file_write_identifier;
-    char *cmd_file_write_filename;
-    char *cmd_file_close_identifier;
-    char *cmd_file_seek_identifier;
-    char *cmd_file_seek_address;
-    char *cmd_record_get_identifier;
-    char *cmd_record_get_variable;
-    char *cmd_record_put_identifier;
-    char *cmd_record_put_variable;
+        struct ParamCmdCall { char *name; } call;
+        struct ParamCmdInput { char *name; } input;
+        struct ParamCmdOutput { char *str; } output;
+        struct ParamCmdFileOpen { char *identifier, *mode; } file_open;
+        struct ParamCmdFileRead { char *identifier; char *variable; } file_read;
+        struct ParamCmdFileWrite { char *identifier; char *filename; } file_write;
+        struct ParamCmdFileClose { char *identifier; } file_close;
+        struct ParamCmdFileSeek { char *identifier; char *address; } file_seek;
+        struct ParamCmdRecordGet { char *identifier; char *variable; } record_get;
+        struct ParamCmdRecordPut { char *identifier; char *variable; } record_put;
+    } params;
 };
 
 // Instruction constructor()
