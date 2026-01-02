@@ -160,6 +160,8 @@ struct Instr {
     char *cmd_record_put_variable;
 };
 
+// Instruction constructor()
+
 
 struct VmState {
     struct Vars {
