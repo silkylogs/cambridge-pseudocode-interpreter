@@ -85,6 +85,21 @@ bool test__vm_decl_var__(void) {
 	// Note for testing:
 	// - Test preconditions
 	// - Test postconditions
+
+	struct VmState state = {0};
+
+	struct ParamDeclVar var;
+	var.name = "Foo";
+	var.type = "INTEGER";
+
+	struct Instr instr = {0};
+	instr.kind = DECL_VAR;
+	instr.params.decl_var = var;
+
+	vm_exe_instr(&state, &instr);
+
+
+
 	return false;
 }
 

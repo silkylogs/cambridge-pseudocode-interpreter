@@ -181,9 +181,6 @@ struct Instr {
     } params;
 };
 
-// Instruction constructor()
-
-
 struct VmState {
     struct Vars {
         struct Var {
