@@ -161,6 +161,14 @@ struct Instr {
 };
 
 
+struct VmState {
+    char **keys;
+    char **values;
+    size_t len;
+};
+
+void vm_exe_instr(struct VmState *state, struct Instr *instr);
+
 #endif
 
 
