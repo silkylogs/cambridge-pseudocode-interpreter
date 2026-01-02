@@ -1,5 +1,18 @@
 #include "vm.h"
 #include <assert.h>
+#include <stdlib.h>
+
+static char *str_dup(char *str) {
+    if (!str) return str;
+
+    size_t len = strlen(str);
+    char *dup = malloc(len);
+    assert(dup);
+    
+    strcpy(dup, str);
+
+    return dup;
+}
 
 static bool type_is_atomic(char *t) {
     if (0 == strcmp(t, "INTEGER")
@@ -42,11 +55,11 @@ static void vm_add_custom_type_var(struct VmState *state, struct CustomTypes *cu
 
 static void vm_decl_var(struct VmState *state, struct Instr *instr) {
     struct Var var = { 0 };
-    var.name = strdup(instr->param_decl_var_name);
-    var.typename = strdup(instr->param_decl_var_type);
+    var.name = str_dup(instr->params.decl_var.name);
+    var.typename = str_dup(instr->params.decl_var.type);
 
     if (type_is_atomic(var.typename)) {
-        var.value = strdup(atomic_type_default_value(var.typename));
+        var.value = str_dup(atomic_type_default_value(var.typename));
         vm_add_atomic_var(state, var);
     }
     else if (type_is_custom(&state->custom_types, var.typename)) {
