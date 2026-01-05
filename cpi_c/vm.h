@@ -181,6 +181,9 @@ struct Instr {
     } params;
 };
 
+struct Instr instr_decl_var(char *name, char *type);
+void instr_free(struct Instr);
+
 struct VmState {
     struct Vars {
         struct Var {
@@ -204,7 +207,11 @@ struct VmState {
     } custom_types;
 };
 
+struct VmState vm_init();
+void vm_free(struct VmState *vm);
+struct Var * vm_search_var_by_name(struct VmState vm, const char *const name);
 void vm_exe_instr(struct VmState *state, struct Instr *instr);
+
 
 #endif
 
