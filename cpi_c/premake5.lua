@@ -54,6 +54,7 @@ project "CambridgePseudocodeInterpreter"
          4101, -- unreferenced local variable
          4996, -- Function is unsafe.
       }
+      sanitize { "Address" }
 
    filter "system:linux"
    -- Note: to build with clang: `premake5 gmake2 --os=linux --cc=clang`
