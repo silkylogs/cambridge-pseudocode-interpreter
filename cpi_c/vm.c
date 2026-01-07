@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 static char *str_dup(const char *const str) {
-    if (!str) return str;
+    if (!str) return NULL;
 
     size_t len = strlen(str) + 1;
     char *dup = malloc(len);
