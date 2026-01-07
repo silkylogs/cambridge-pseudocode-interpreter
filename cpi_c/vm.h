@@ -181,7 +181,7 @@ struct Instr {
     } params;
 };
 
-struct Instr instr_decl_var(char *name, char *type);
+struct Instr instr_decl_var(char const *const name, char const *const type);
 void instr_free(struct Instr);
 
 struct VmState {
