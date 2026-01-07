@@ -1,1 +1,2 @@
-cls && premake5 vs2022 && msbuild CambridgePseudocodeInterpeter.sln && bin\Debug-windows-x86_64\CambridgePseudocodeInterpreter\CambridgePseudocodeInterpreter.exe
+cmake -S . -B bin -DCPI_BUILD_TESTS=ON -DCPI_BUILD_MAIN=ON
+cmake --build bin
