@@ -28,7 +28,22 @@ if (MSVC)
     -D_CRT_SECURE_NO_WARNINGS # Annex K functions are just fine.
   )
 else()
-  add_compile_options(-Wall -Wextra -pedantic)
+  add_compile_options(
+    -Wall -Wextra -pedantic
+    -Wwrite-strings
+    -Wstrict-prototypes
+    -Wmissing-prototypes
+    -Wmissing-declarations
+    -Wsign-compare
+    -Wlogical-op
+    -Wtype-limits
+    -Wsuggest-attribute=pure
+    -Wsuggest-attribute=const
+    -Wsuggest-attribute=noreturn
+    -Wsuggest-attribute=format
+    -Wformat-nonliteral
+    -Werror=vla
+  )
 endif()
 
 add_library(Vm STATIC)
