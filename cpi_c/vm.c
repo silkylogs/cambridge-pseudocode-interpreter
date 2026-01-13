@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#define TODO assert(!"Todo");
+
 static char *str_dup(const char *const str) {
     if (!str) return NULL;
 
@@ -37,7 +39,7 @@ static char *atomic_type_default_value(char *t) {
 }
 
 bool type_is_custom(struct CustomTypes *ts, char *typename) {
-    assert(!"todo");
+    TODO;
 }
 
 // -----------------------------------------------------------------
@@ -53,7 +55,7 @@ static void vm_add_atomic_var(struct VmState *state, struct Var var) {
 }
 
 static void vm_add_custom_type_var(struct VmState *state, struct CustomTypes *custom_types, char *typename) {
-    assert(!"Todo");
+    TODO;
 }
 
 // -----------------------------------------------------------------
@@ -234,7 +236,7 @@ struct Instr instr_decl_var(char const *const name, char const *const type) {
 }
 
 void instr_free(struct Instr i) {
-    // TODO: actually free it
+    TODO; // Actually free it
 }
 
 struct VmState vm_init() {
@@ -264,7 +266,7 @@ void vm_free(struct VmState *vm) {
     free(vm->variables.vars);
     vm->variables.vars = NULL;
 
-    // TODO: free custom types
+    TODO; // free custom types
 }
 
 struct Var *vm_search_var_by_name(struct VmState vm, const char *const name) {
