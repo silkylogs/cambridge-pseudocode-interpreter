@@ -72,246 +72,258 @@
 // - File: open, read, write, close, seek
 // - Record: get, put
 
+typedef char *OwnedCstr;
+typedef char *BorrowedCStr;
+
 struct ParamDeclVar {
-  char *name;
-  char *type;
+    OwnedCstr name;
+    OwnedCstr type;
 };
 
+struct ParamDeclVar param_decl_var_new(OwnedCstr name, OwnedCstr type);
+void param_decl_var_free(struct ParamDeclVar *);
+
 struct ParamDeclConst {
-  char *name;
-  char *type;
+    OwnedCstr name;
+    OwnedCstr type;
 };
 
 struct ParamDeclArr1d {
-  char *name;
-  char *type;
-  char *bound_lower;
-  char *bound_upper;
+    OwnedCstr name;
+    OwnedCstr type;
+    size_t bound_lower;
+    size_t bound_upper;
 };
 
 struct ParamDeclArr2d {
-  char *name;
-  char *type;
-  char *dim0_bound_lower;
-  char *dim0_bound_upper;
-  char *dim1_bound_lower;
-  char *dim1_bound_upper;
+    OwnedCstr name;
+    OwnedCstr type;
+    size_t dim0_bound_lower;
+    size_t dim0_bound_upper;
+    size_t dim1_bound_lower;
+    size_t dim1_bound_upper;
 };
+
+// This should be a variable. Probably.
+typedef char *TodoType;
 
 // The operation type (add, sub, etc) should be derived from the kind of
 // operation.
 struct ParamAssignment {
-  char *result;
-  char *param0;
-  char *param1;
+    TodoType result;
+    TodoType param0;
+    TodoType param1;
 };
 
 // "If condition is true, execute this *reigon* of code. Else skip over that
 // reigon."
 struct ParamBrIf {
-  char *condition;
-  char *if_reigon_len;
-  // if (foo) ... else ... [The else conditoin cannot
-  // exist without the if]
-  char *else_reigon_len;
+    bool condition;
+    size_t if_reigon_len;
+    // if (foo) ... else ... [The else conditoin cannot
+    // exist without the if]
+    size_t else_reigon_len;
 };
 
 struct ParamBrCase {
-  char *condition;
-  char *reigon_len;
-  char **values;
-  char **value_reigons;
-  char *value_cnt;
+    TodoType condition;
+    size_t reigon_len;
+
+    TodoType *values;
+    size_t *value_statement_starts;
+    size_t *value_statement_lengths;
+    size_t value_cnt;
 };
 
 struct ParamLoopFor {
-  char *identifier_name;
-  char *value0_name;
-  char *value1_name;
-  char *step_name;
-  char *reigon_len;
+    OwnedCstr identifier_name;
+    OwnedCstr value0_name;
+    OwnedCstr value1_name;
+    OwnedCstr step_name;
+    size_t reigon_len;
 };
 
 struct ParamLoopRepeatUntil {
-  char *condition_name;
-  char *reigon_len;
+    OwnedCstr condition_name;
+    size_t reigon_len;
 };
 
 struct ParamLoopWhile {
-  char *condition_name;
-  char *reigon_len;
+    OwnedCstr condition_name;
+    size_t reigon_len;
 };
 
 struct ParamDefnCustomType {
-  char *name;
-  char *type;
+    OwnedCstr name;
+    OwnedCstr type;
 };
 
 struct ParamDefnProcedure {
-  char *name;
-  char *reigon_len;
+    OwnedCstr name;
+    size_t reigon_len;
 };
 
 struct ParamDefnFunction {
-  char *name;
-  char *ret_value_name;
-  char *reigon_len;
+    OwnedCstr name;
+    OwnedCstr ret_value_name;
+    size_t reigon_len;
 };
 
 struct ParamCmdCall {
-  char *name;
+    OwnedCstr name;
 };
 
 struct ParamCmdInput {
-  char *name;
+    OwnedCstr name;
 };
 
 struct ParamCmdOutput {
-  char *str;
+    OwnedCstr str;
 };
 
 struct ParamCmdFileOpen {
-  char *identifier, *mode;
+    OwnedCstr identifier;
+    OwnedCstr mode;
 };
 
 struct ParamCmdFileRead {
-  char *identifier;
-  char *variable;
+    OwnedCstr identifier;
+    OwnedCstr variable;
 };
 
 struct ParamCmdFileWrite {
-  char *identifier;
-  char *filename;
+    OwnedCstr identifier;
+    OwnedCstr filename;
 };
 
 struct ParamCmdFileClose {
-  char *identifier;
+    TodoType identifier;
 };
 
 struct ParamCmdFileSeek {
-  char *identifier;
-  char *address;
+    OwnedCstr identifier;
+    TodoType address;
 };
 
 struct ParamCmdRecordGet {
-  char *identifier;
-  char *variable;
+    OwnedCstr identifier;
+    TodoType variable;
 };
 
 struct ParamCmdRecordPut {
-  char *identifier;
-  char *variable;
+    OwnedCstr identifier;
+    TodoType variable;
 };
 
 struct Instr {
-  enum Kind {
-    DECL_VAR,
-    DECL_CONST,
-    DECL_ARR1D,
-    DECL_ARR2D,
+    enum Kind {
+        DECL_VAR,
+        DECL_CONST,
+        DECL_ARR1D,
+        DECL_ARR2D,
 
-    ASS_ADD,
-    ASS_SUB,
-    ASS_MUL,
-    ASS_DIV,
-    ASS_GEQ,
-    ASS_LEQ,
-    ASS_GT,
-    ASS_LT,
-    ASS_EQ,
-    ASS_NEQ,
-    ASS_AND,
-    ASS_OR,
-    ASS_NOT,
+        ASS_ADD,
+        ASS_SUB,
+        ASS_MUL,
+        ASS_DIV,
+        ASS_GEQ,
+        ASS_LEQ,
+        ASS_GT,
+        ASS_LT,
+        ASS_EQ,
+        ASS_NEQ,
+        ASS_AND,
+        ASS_OR,
+        ASS_NOT,
 
-    BR_IF,
-    BR_IF_ELSE,
-    BR_CASE,
-    BR_CASE_OTHERWISE,
+        BR_IF,
+        BR_IF_ELSE,
+        BR_CASE,
+        BR_CASE_OTHERWISE,
 
-    LOOP_FOR,
-    LOOP_FOR_STEP,
-    LOOP_REPEAT_UNTIL,
-    LOOP_WHILE,
+        LOOP_FOR,
+        LOOP_FOR_STEP,
+        LOOP_REPEAT_UNTIL,
+        LOOP_WHILE,
 
-    DEFN_CUSTOM_TYPE,
-    DEFN_PROCEDURE,
-    DEFN_FUNCTION,
+        DEFN_CUSTOM_TYPE,
+        DEFN_PROCEDURE,
+        DEFN_FUNCTION,
 
-    CMD_CALL,
-    CMD_INPUT,
-    CMD_OUTPUT,
-    CMD_FILE_OPEN,
-    CMD_FILE_READ,
-    CMD_FILE_WRITE,
-    CMD_FILE_CLOSE,
-    CMD_FILE_SEEK,
-    CMD_RECORD_GET,
-    CMD_RECORD_PUT,
-  } kind;
+        CMD_CALL,
+        CMD_INPUT,
+        CMD_OUTPUT,
+        CMD_FILE_OPEN,
+        CMD_FILE_READ,
+        CMD_FILE_WRITE,
+        CMD_FILE_CLOSE,
+        CMD_FILE_SEEK,
+        CMD_RECORD_GET,
+        CMD_RECORD_PUT,
+    } kind;
 
-  // All strings are null terminated.
-  // The string may encode a numeric type.
-  union Parameters {
-    struct ParamDeclVar decl_var;
-    struct ParamDeclConst decl_const;
-    struct ParamDeclArr1d decl_arr1d;
-    struct ParamDeclArr2d decl_arr2d;
-    struct ParamAssignment ass;
-    struct ParamBrIf br_if;
-    struct ParamBrCase br_case;
-    struct ParamLoopFor loop_for;
-    struct ParamLoopRepeatUntil loop_repeat_until;
-    struct ParamLoopWhile loop_while;
-    struct ParamDefnCustomType defn_custom_type;
-    struct ParamDefnProcedure defn_procedure;
-    struct ParamDefnFunction defn_function;
-    struct ParamCmdCall call;
-    struct ParamCmdInput input;
-    struct ParamCmdOutput output;
-    struct ParamCmdFileOpen file_open;
-    struct ParamCmdFileRead file_read;
-    struct ParamCmdFileWrite file_write;
-    struct ParamCmdFileClose file_close;
-    struct ParamCmdFileSeek file_seek;
-    struct ParamCmdRecordGet record_get;
-    struct ParamCmdRecordPut record_put;
-  } params;
+    // All strings are null terminated.
+    // The string may encode a numeric type.
+    union Parameters {
+        struct ParamDeclVar decl_var;
+        struct ParamDeclConst decl_const;
+        struct ParamDeclArr1d decl_arr1d;
+        struct ParamDeclArr2d decl_arr2d;
+        struct ParamAssignment ass;
+        struct ParamBrIf br_if;
+        struct ParamBrCase br_case;
+        struct ParamLoopFor loop_for;
+        struct ParamLoopRepeatUntil loop_repeat_until;
+        struct ParamLoopWhile loop_while;
+        struct ParamDefnCustomType defn_custom_type;
+        struct ParamDefnProcedure defn_procedure;
+        struct ParamDefnFunction defn_function;
+        struct ParamCmdCall call;
+        struct ParamCmdInput input;
+        struct ParamCmdOutput output;
+        struct ParamCmdFileOpen file_open;
+        struct ParamCmdFileRead file_read;
+        struct ParamCmdFileWrite file_write;
+        struct ParamCmdFileClose file_close;
+        struct ParamCmdFileSeek file_seek;
+        struct ParamCmdRecordGet record_get;
+        struct ParamCmdRecordPut record_put;
+    } params;
 };
 
 struct Instr instr_decl_var(char const *const name, char const *const type);
 void instr_free(struct Instr);
 
 struct Var {
-  char *name;
-  char *value;
-  char *typename;
+    OwnedCstr name;
+    OwnedCstr value;
+    OwnedCstr typename;
 };
 
 struct Vars {
-  struct Var *vars;
-  size_t len;
+    struct Var *vars;
+    size_t len;
 };
 
 struct CustomTypeMember {
-  char *name;
-  char *type;
+    OwnedCstr name;
+    OwnedCstr type;
 };
 
 struct CustomType {
-  char *name;
-  struct CustomTypeMember *members;
-  size_t member_count;
+    OwnedCstr name;
+    struct CustomTypeMember *members;
+    size_t member_count;
 };
 
 struct CustomTypes {
-  struct CustomType *types;
-  size_t len;
+    struct CustomType *types;
+    size_t len;
 };
 
 struct VmState {
-  struct Vars variables;
-  struct CustomTypes custom_types;
+    struct Vars variables;
+    struct CustomTypes custom_types;
 };
 
 struct VmState vm_init();
