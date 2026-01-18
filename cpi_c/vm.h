@@ -11,69 +11,14 @@
 // Virtual machine - Mirrors the kinds of statements the langauge can execute,
 // but simpler.
 //
-// # Statement types
-// - Declarations
-// - Assignments
-// - Branching
-// - Loops
-// - Definitions
-// - Commands
+// Dimensions of things to consider about the task of storage of variables:
+// - Store program data (Mutable Variable, Immutable Literal)
+// - With types (integer, real, string, char, date, boolean)
+// - Has scope based lifetime. Can shadow.
+// - As function parameter, may be passed by value or reference
+// - Is an array type
 //
-// # Declarations
-// Every variable or constant has a name. Therefore, the name can be used as a
-// key to map it's value. Declarations dont come with assignments.
-// - Variable
-// - Constant
-// - Array1D
-// - Array2D
-//
-// # Assignments
-// To simplify, this VM will not evaluate expressions. That is the job of the
-// parser. The VM will instead evaluate a simpler form, such as "res" = "arg1"
-// op "arg2" (except for the unary operator)
-// ## Operations
-// Every number is a double. Or a double with it's fractional part truncated and
-// masquerading as an integer.
-// - Addition    |--------------- Has lower predecence
-// - Subtraction |
-// - Multiplication |------------ Has higher predecence
-// - Division       |
-// - Greater than             |-- Has lowest predecence
-// - Lesser than              |
-// - Greater than or equal to |
-// - Lesser than or equal to  |
-// - Not equal to             |
-// - Equal to                 |
-// - Logical AND              |
-// - Logical OR               |
-// - Logical NOT              |
-//
-// # Branching
-// if (condition) instr_ptr += offset;
-// - If
-// - If else
-// - Case
-// - Case otherwise
-//
-// # Loops
-// - For
-// - For with step
-// - Repeat until
-// - While
-//
-// # Definitions
-// - Custom type. "foo.bar.baz" could be a key. Wait, everything's a double or a
-// string.
-// - Procedure (returns nothing)
-// - Function (returns something)
-//
-// # Commands
-// - Call function
-// - Input... A num/string.
-// - Output... A string. Interpreter's job to do the parsing.
-// - File: open, read, write, close, seek
-// - Record: get, put
-
+// Most frequent operation is name lookup
 
 struct Var {
     OwnedCstr name;
