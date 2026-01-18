@@ -27,7 +27,7 @@ if (MSVC)
     /wd4100 # Unreferenced formal parameter
     -D_CRT_SECURE_NO_WARNINGS # Annex K functions are just fine.
   )
-else()
+elseif (GNU)
   add_compile_options(
     -Wall -Wextra -pedantic
     -Wwrite-strings
@@ -44,10 +44,18 @@ else()
     -Wformat-nonliteral
     -Werror=vla
   )
+elseif (Clang)
+  add_compile_options(-Wmost)
+else () # Appleclang, I suppose
+  add_compile_options(-Wmost)
 endif()
+
+add_library(Ir STATIC)
+target_sources(Ir PRIVATE ir.c ir.h)
 
 add_library(Vm STATIC)
 target_sources(Vm PRIVATE vm.c vm.h)
+target_link_libraries(Vm PRIVATE Ir)
 
 if(CPI_BUILD_TESTS)
     add_executable(test)
