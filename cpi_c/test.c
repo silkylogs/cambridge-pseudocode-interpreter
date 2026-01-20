@@ -84,153 +84,19 @@ static void cp_run_tests(Tests ts) {
 // - Test preconditions
 // - Test postconditions
 
-bool test__vm_decl_var__atomic_dt__INTEGER(void) {
-    bool test_ok = false;
-    struct VmState state = vm_init();
-    struct Instr i = instr_decl_var("Foo", "INTEGER");;
-
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "0")
-            && 0 == strcmp(var->typename, "INTEGER");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
+bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
+    return 1
+        && vm_guess_stmt_kind_from_first_word("declare") == STMT_DECLARE
+        && vm_guess_stmt_kind_from_first_word("Declare") == STMT_DECLARE
+        && vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE
+        ;
 }
 
-bool test__vm_decl_var__atomic_dt__REAL(void) {
-    struct VmState state = vm_init();
-    struct Instr i;
-    bool test_ok = false;
-
-    i = instr_decl_var("Foo", "REAL");
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "0.0")
-            && 0 == strcmp(var->typename, "REAL");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
-}
-
-bool test__vm_decl_var__atomic_dt__CHAR(void) {
-    struct VmState state = vm_init();
-    struct Instr i;
-    bool test_ok = false;
-
-    i = instr_decl_var("Foo", "CHAR");
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "\0")
-            && 0 == strcmp(var->typename, "CHAR");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
-}
-
-bool test__vm_decl_var__atomic_dt__STRING(void) {
-    struct VmState state = vm_init();
-    struct Instr i;
-    bool test_ok = false;
-
-    i = instr_decl_var("Foo", "STRING");
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "\0")
-            && 0 == strcmp(var->typename, "STRING");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
-}
-
-
-bool test__vm_decl_var__atomic_dt__DATE(void) {
-    struct VmState state = vm_init();
-    struct Instr i;
-    bool test_ok = false;
-
-    i = instr_decl_var("Foo", "DATE");
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "00/00/0000")
-            && 0 == strcmp(var->typename, "DATE");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
-}
-
-bool test__vm_decl_var__atomic_dt__BOOLEAN(void) {
-    struct VmState state = vm_init();
-    struct Instr i;
-    bool test_ok = false;
-
-    i = instr_decl_var("Foo", "BOOLEAN");
-    vm_exe_instr(&state, &i);
-    instr_free(i);
-
-    struct Var *var = vm_search_var_by_name(state, "Foo");
-    if (var) {
-        test_ok = 0 == strcmp(var->name, "Foo")
-            && 0 == strcmp(var->value, "FALSE")
-            && 0 == strcmp(var->typename, "BOOLEAN");
-    } else {
-        printf("Expected search for \"%s\" to succeed.\n", "Foo");
-        test_ok = false;
-    }
-
-    vm_free(&state);
-    return test_ok;
-}
 
 // ---------------------------------------------------------
 
 int main(void) {
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__INTEGER);
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__REAL);
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__CHAR);
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__DATE);
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__STRING);
-    CP_ADD_TEST(test__vm_decl_var__atomic_dt__BOOLEAN);
+    CP_ADD_TEST(test__vm_guess_stmt_kind_from_first_word__DECLARE);
 
     CP_RUN_TESTS();
 

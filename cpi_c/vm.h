@@ -20,42 +20,12 @@
 //
 // Most frequent operation is name lookup
 
-struct Var {
-    OwnedCstr name;
-    OwnedCstr value;
-    OwnedCstr typename;
+enum StatementGuess {
+    STMT_DECLARE,
+    STMT_POSSIBLY_ASSIGNMENT,
 };
 
-struct Vars {
-    struct Var *vars;
-    size_t len;
-};
-
-struct CustomTypeMember {
-    OwnedCstr name;
-    OwnedCstr type;
-};
-
-struct CustomType {
-    OwnedCstr name;
-    struct CustomTypeMember *members;
-    size_t member_count;
-};
-
-struct CustomTypes {
-    struct CustomType *types;
-    size_t len;
-};
-
-struct VmState {
-    struct Vars variables;
-    struct CustomTypes custom_types;
-};
-
-struct VmState vm_init();
-void vm_free(struct VmState *vm);
-struct Var *vm_search_var_by_name(struct VmState vm, const char *const name);
-void vm_exe_instr(struct VmState *state, struct Instr *instr);
+enum StatementGuess vm_guess_stmt_kind_from_first_word(char **stmt_ptr);
 
 #endif
 
