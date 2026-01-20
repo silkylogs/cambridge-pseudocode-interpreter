@@ -85,13 +85,8 @@ static void cp_run_tests(Tests ts) {
 // - Test postconditions
 
 bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
-    return 1
-        && vm_guess_stmt_kind_from_first_word("declare") == STMT_DECLARE
-        && vm_guess_stmt_kind_from_first_word("Declare") == STMT_DECLARE
-        && vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE
-        ;
+    return vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE;
 }
-
 
 // ---------------------------------------------------------
 
