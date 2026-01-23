@@ -12,9 +12,18 @@
 //}
 //
 
-static bool case_sensitive_open_ended_strequ(char *a, char *b) {
+char upper(char c) {
+    if (c >= 'a' && c <= 'z') {
+        c -= 'a' - 'A';
+    }
+    return c;
+}
+
+static bool streq(char *a, char *b) {
     while (*a && *b) {
-        if (*a == *b) {
+        char ua = upper(*a);
+        char ub = upper(*b);
+        if (ua == ub) {
             a++;
             b++;
         } else return false;
@@ -23,7 +32,7 @@ static bool case_sensitive_open_ended_strequ(char *a, char *b) {
 }
 
 enum StatementGuess vm_guess_stmt_kind_from_first_word(char *stmt_ptr) {
-    if (case_sensitive_open_ended_strequ(stmt_ptr, "DECLARE")) {
+    if (streq(stmt_ptr, "DECLARE")) {
         return STMT_DECLARE;
     } else {
         return STMT_POSSIBLY_ASSIGNMENT;

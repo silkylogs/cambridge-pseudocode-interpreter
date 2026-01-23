@@ -84,13 +84,30 @@ static void cp_run_tests(Tests ts) {
 // - Test preconditions
 // - Test postconditions
 
-bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
-    return vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE;
+static bool test__upper(void) {
+    bool ok = true;
+    ok &= upper('d') == 'D';
+    ok &= upper('e') == 'E';
+    ok &= upper('c') == 'C';
+    ok &= upper('l') == 'L';
+    ok &= upper('a') == 'A';
+    ok &= upper('r') == 'R';
+    ok &= upper('e') == 'E';
+    return ok;
+}
+
+static bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
+    bool ok = true;
+    ok &= vm_guess_stmt_kind_from_first_word("Declare") == STMT_DECLARE;
+    ok &= vm_guess_stmt_kind_from_first_word("declare") == STMT_DECLARE;
+    ok &= vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE;
+    return ok;
 }
 
 // ---------------------------------------------------------
 
 int main(void) {
+    CP_ADD_TEST(test__upper);
     CP_ADD_TEST(test__vm_guess_stmt_kind_from_first_word__DECLARE);
 
     CP_RUN_TESTS();
