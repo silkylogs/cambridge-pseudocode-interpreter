@@ -39,14 +39,17 @@ enum StatementGuess vm_guess_stmt_kind_from_first_word(char *stmt_ptr) {
     }
 }
 
-void vm_decl_var_in_current_scope() {
+static void vm_decl_var_in_current_scope(void) {
     TODO;
 }
 
 void vm_exec_stmt(struct VmState *state, char **stmt_ptr) {
-    switch (vm_guess_stmt_kind_from_first_word(stmt_ptr)) {
+    switch (vm_guess_stmt_kind_from_first_word(*stmt_ptr)) {
         case STMT_DECLARE:
         {
+            // TODO: get statement length
+            // TODO: get var name
+            // TODO: get var type
             vm_decl_var_in_current_scope();
             break;
         }
