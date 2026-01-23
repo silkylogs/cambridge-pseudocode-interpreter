@@ -26,6 +26,10 @@ if (MSVC)
     /wd4574 # Macro is defined to be '0': did you mean to use '#if'?
     /wd4100 # Unreferenced formal parameter
     -D_CRT_SECURE_NO_WARNINGS # Annex K functions are just fine.
+    /ZI # Hot reloading
+  )
+  add_link_options(
+    /INCREMENTAL # Hot reloading
   )
 elseif (GNU)
   add_compile_options(
@@ -60,6 +64,9 @@ target_link_libraries(Vm PRIVATE Ir)
 if(CPI_BUILD_TESTS)
     add_executable(test)
     target_sources(test PRIVATE test.c)
+    if (MSVC)
+        target_compile_options(test PRIVATE /ZI)
+    endif ()
     target_link_libraries(test PRIVATE Vm)
 endif()
 
