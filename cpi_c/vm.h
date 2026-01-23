@@ -25,7 +25,8 @@ enum StatementGuess {
     STMT_POSSIBLY_ASSIGNMENT,
 };
 
-enum StatementGuess vm_guess_stmt_kind_from_first_word(char **stmt_ptr);
+char upper(char c);
+enum StatementGuess vm_guess_stmt_kind_from_first_word(char *stmt_ptr);
 
 #endif
 
