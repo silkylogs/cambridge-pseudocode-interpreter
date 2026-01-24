@@ -26,13 +26,18 @@ enum StatementGuess {
 };
 
 char upper(char c);
-enum StatementGuess vm_guess_stmt_kind_from_first_word(char *stmt_ptr);
+void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out_sg, size_t *out_stmt_len);
 
 struct VmState {
-    int placeholder;
+    size_t top;
+    size_t cap;
+    struct Var {
+        char name[8];
+        char type[8];
+    } *vars;
 };
 
-void vm_exec_stmt(struct VmState *state, char **stmt_ptr);
+void vm_exec_stmt(struct VmState *state, char *stmt_ptr);
 
 #endif
 

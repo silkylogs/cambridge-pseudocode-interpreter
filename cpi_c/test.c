@@ -98,9 +98,39 @@ static bool test__upper(void) {
 
 static bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
     bool ok = true;
-    ok &= vm_guess_stmt_kind_from_first_word("Declare") == STMT_DECLARE;
-    ok &= vm_guess_stmt_kind_from_first_word("declare") == STMT_DECLARE;
-    ok &= vm_guess_stmt_kind_from_first_word("DECLARE") == STMT_DECLARE;
+
+    size_t len;
+    enum StatementGuess g0, g1, g2;
+
+    vm_guess_stmt_kind_from_first_word("Declare", &g0, &len);
+    vm_guess_stmt_kind_from_first_word("declare", &g1, &len);
+    vm_guess_stmt_kind_from_first_word("DECLARE", &g2, &len);
+
+    ok &= g0 == STMT_DECLARE;
+    ok &= g1 == STMT_DECLARE;
+    ok &= g2 == STMT_DECLARE;
+    ok &= len == sizeof "DECLARE" - 1;
+    
+    return ok;
+}
+
+static bool test__vm_exec_stmt__DECLARE(void) {
+    bool ok = true;
+    struct VmState state = {0};
+    
+    char stmt0[] = "DECLARE Foo : Bar";
+    char stmt1[] = "DECLARE LongerVarName : LongerTypeName";
+
+    vm_exec_stmt(&state, &stmt0);
+    vm_exec_stmt(&state, &stmt1);
+
+    // TODO: state.vars == Foo && state.types == bar
+    ok &= 0==strcmp(state.vars[0].name, "Foo");
+    ok &= 0==strcmp(state.vars[0].type, "Bar");
+
+    ok &= 0==strcmp(state.vars[1].name, "LongerV");
+    ok &= 0==strcmp(state.vars[1].type, "LongerT");
+
     return ok;
 }
 
@@ -109,6 +139,7 @@ static bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
 int main(void) {
     CP_ADD_TEST(test__upper);
     CP_ADD_TEST(test__vm_guess_stmt_kind_from_first_word__DECLARE);
+    CP_ADD_TEST(test__vm_exec_stmt__DECLARE);
 
     CP_RUN_TESTS();
 
