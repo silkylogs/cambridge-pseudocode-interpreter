@@ -372,7 +372,7 @@ static bool test__example__file_handling_operations(void) {
         "OPENFILE FileB.txt FOR WRITE\n"
         "WHILE NOT EOF(FileA.txt) DO\n"
         "   READFILE FileA.txt, LineOfText\n"
-        "   IF LineOfText = ""\n"
+        "   IF LineOfText = \"\"\n"
         "       THEN\n"
         "           WRITEFILE FileB.txt, \"-------------------------\"\n"
         "       ELSE\n"
