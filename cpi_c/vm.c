@@ -39,13 +39,13 @@ void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out
     }
 }
 
-static void whitespace_len(char *str, size_t *out_len) {
-    char c;
-    *out_len = 0;
+static bool skip_whitespace(char **pstr) {
+    bool found = false;
     do {
-        c = str[*out_len];
-        if (!(c == ' ' && c != '\0')) return;
-        *out_len += 1;
+        char c = **pstr;
+        if (!(c == ' ' && c != '\0')) return found;
+        *pstr += 1;
+        found = true;
     } while (true);
 }
 
@@ -68,24 +68,49 @@ char *get_var_name(char *str, size_t *out_len) {
     return str;
 }
 
-char *get_var_type(char *str, size_t *out_len) {
-    char c;
-    *out_len = 0;
-    do {
-        c = str[*out_len];
-        if (!is_in_var_charset(c)) break;
-        *out_len += 1;
-    } while (true);
+static bool extract_skip_var_name(char **pstr, char **out_var_name, size_t *out_var_len) {
+    *out_var_name = get_var_name(*pstr, out_var_len);
+    *pstr += *out_var_len;
+    return (*out_var_name != 0);
+}
 
-    return str;
+static bool extract_skip_var_type(char **pstr, char **out_var_name, size_t *out_var_len) {
+    return extract_skip_var_name(pstr, out_var_name, out_var_len);
+}
+
+static bool skip_colon(char **pstr) {
+    if (**pstr == ':') {
+        *pstr += 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static bool skip_newline(char **pstr) {
+    if (**pstr == '\n') {
+        *pstr += 1;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static bool skip_nul(char **pstr) {
+    if (**pstr == '\0') {
+        *pstr += 1;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 static void vm_alloc_var(struct VmState *state) {
     if (state->top >= state->cap) {
-        if (state->cap) state->cap *= 2; 
+        if (state->cap) state->cap *= 2;
         else state->cap = 8;
 
-        size_t alloc_sz = state->cap * sizeof (state->vars[0]);
+        size_t alloc_sz = state->cap * sizeof(state->vars[0]);
         struct Var *ptr = realloc(state->vars, alloc_sz);
         assert(ptr);
         state->vars = ptr;
@@ -132,32 +157,28 @@ void vm_exec_stmt(struct VmState *state, char *stmt_ptr) {
     switch (guess) {
         case STMT_DECLARE:
         {
-            // <space> DECLARE <space> VarName <space> : <space> TypeName <space> <EOL>
+            // <optional space> DECLARE <space> VarName <optional space> : <optional space> TypeName <optional space> <EOL>
+            //                          ^ You are here.
 
-            whitespace_len(stmt_ptr, &len);
-            stmt_ptr += len;
+            // Note: Replace asserts with macro exiting with a good error message.
 
-            char *var_name = get_var_name(stmt_ptr, &len);
-            size_t var_name_len = len;
-            stmt_ptr += len;
+            assert(skip_whitespace(&stmt_ptr) && "Expected whitespace");
 
-            whitespace_len(stmt_ptr, &len);
-            stmt_ptr += len;
+            char *var_name; size_t var_name_len;
+            assert(extract_skip_var_name(&stmt_ptr, &var_name, &var_name_len) && "Expected variable name");
 
-            assert(*stmt_ptr == ':');
-            stmt_ptr += 1;
+            skip_whitespace(&stmt_ptr);
 
-            whitespace_len(stmt_ptr, &len);
-            stmt_ptr += len;
+            assert(skip_colon(&stmt_ptr) && "Expected colon");
+            
+            skip_whitespace(&stmt_ptr);
 
-            char *var_type = get_var_type(stmt_ptr, &len);
-            size_t var_type_len = len;
-            stmt_ptr += len;
+            char *var_type; size_t var_type_len;
+            assert(extract_skip_var_type(&stmt_ptr, &var_type, &var_type_len) && "Expected variable type");
 
-            whitespace_len(stmt_ptr, &len);
-            stmt_ptr += len;
+            skip_whitespace(&stmt_ptr);
 
-            assert(*stmt_ptr == '\n' || *stmt_ptr == '\0');
+            assert(skip_newline(&stmt_ptr) || skip_nul(&stmt_ptr) && "Expected newline or nul terminator");
 
             vm_decl_var_in_current_scope(state, var_name, var_name_len, var_type, var_type_len);
             break;
