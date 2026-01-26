@@ -80,43 +80,46 @@ char *get_var_type(char *str, size_t *out_len) {
     return str;
 }
 
-// TODO: memory management
+static void vm_alloc_var(struct VmState *state) {
+    if (state->top >= state->cap) {
+        if (state->cap) state->cap *= 2; 
+        else state->cap = 8;
+
+        size_t alloc_sz = state->cap * sizeof (state->vars[0]);
+        struct Var *ptr = realloc(state->vars, alloc_sz);
+        assert(ptr);
+        state->vars = ptr;
+    }
+}
+
+static void vm_add_var(
+    struct VmState *state,
+    char *name, size_t name_len,
+    char *type, size_t type_len
+) {
+    // Initialize name container.
+    size_t name_size_in_db = 8;
+    size_t top = state->top;
+    memset(state->vars[top].name, '\0', name_size_in_db);
+    memset(state->vars[top].type, '\0', name_size_in_db);
+
+    // Copy name to container.
+    size_t max_sz = name_size_in_db - 1;
+    size_t sz = (name_len >= max_sz) ? max_sz : name_len;
+    memcpy(state->vars[top].name, name, sz);
+    sz = (type_len >= max_sz) ? max_sz : type_len;
+    memcpy(state->vars[top].type, type, sz);
+
+    state->top += 1; // Bump the top.
+}
+
 static void vm_decl_var_in_current_scope(
     struct VmState *state,
     char *name, size_t name_len,
     char *type, size_t type_len
 ) {
-    if (state->top == 0) {
-        if (state->cap == 0) {
-            state->cap = 1;
-            state->vars = NULL;
-        } else {
-            state->cap *= 2;
-        }
-    } else {
-        state->top += 1;
-        state->cap *= 2;
-    }
-    assert(state->top < state->cap);
-    size_t alloc_sz = state->cap * sizeof(state->vars[0]);
-    struct Var *ptr = realloc(state->vars, alloc_sz);
-    assert(ptr);
-    state->vars = ptr;
-
-    size_t name_size_in_db = 8;
-
-    memset(state->vars[state->top].name, '\0', name_size_in_db);
-    memset(state->vars[state->top].type, '\0', name_size_in_db);
-
-    size_t max_sz = name_size_in_db - 1;
-
-    size_t sz = (name_len >= max_sz) ? max_sz : name_len;
-    memcpy(state->vars[state->top].name, name, sz);
-
-    sz = (type_len >= max_sz) ? max_sz : type_len;
-    memcpy(state->vars[state->top].type, type, sz);
-
-    if (state->top == 0) state->top = 1;
+    vm_alloc_var(state);
+    vm_add_var(state, name, name_len, type, type_len);
 }
 
 void vm_exec_stmt(struct VmState *state, char *stmt_ptr) {
