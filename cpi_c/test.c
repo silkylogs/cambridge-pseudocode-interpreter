@@ -118,7 +118,6 @@ static bool test__vm_exec_stmt__DECLARE(void) {
     bool ok = true;
     struct VmState state = { 0 };
 
-    //char stmt0[] = "DECLARE Foo : Bar";
     char stmt0[] = "DECLARE Foo : Bar";
     char stmt1[] = "DECLARE LongerVarName : LongerTypeName";
 

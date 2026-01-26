@@ -28,12 +28,13 @@ enum StatementGuess {
 char upper(char c);
 void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out_sg, size_t *out_stmt_len);
 
+#define VAR_NAME_LEN ((size_t)8)
 struct VmState {
     size_t top;
     size_t cap;
     struct Var {
-        char name[8];
-        char type[8];
+        char name[VAR_NAME_LEN];
+        char type[VAR_NAME_LEN];
     } *vars;
 };
 

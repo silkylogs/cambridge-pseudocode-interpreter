@@ -123,13 +123,12 @@ static void vm_add_var(
     char *type, size_t type_len
 ) {
     // Initialize name container.
-    size_t name_size_in_db = 8;
     size_t top = state->top;
-    memset(state->vars[top].name, '\0', name_size_in_db);
-    memset(state->vars[top].type, '\0', name_size_in_db);
+    memset(state->vars[top].name, '\0', VAR_NAME_LEN);
+    memset(state->vars[top].type, '\0', VAR_NAME_LEN);
 
     // Copy name to container.
-    size_t max_sz = name_size_in_db - 1;
+    size_t max_sz = VAR_NAME_LEN - 1;
     size_t sz = (name_len >= max_sz) ? max_sz : name_len;
     memcpy(state->vars[top].name, name, sz);
     sz = (type_len >= max_sz) ? max_sz : type_len;
