@@ -114,7 +114,7 @@ static bool test__vm_guess_stmt_kind_from_first_word__DECLARE(void) {
     return ok;
 }
 
-static bool test__vm_exec_stmt__DECLARE(void) {
+static bool test__vm_exec_stmt__DECLARE_name_and_type_extraction(void) {
     bool ok = true;
     struct VmState state = { 0 };
 
@@ -124,12 +124,73 @@ static bool test__vm_exec_stmt__DECLARE(void) {
     vm_exec_stmt(&state, &stmt0);
     vm_exec_stmt(&state, &stmt1);
 
-    // TODO: state.vars == Foo && state.types == bar
     ok &= 0 == strcmp(state.vars[0].name, "Foo");
     ok &= 0 == strcmp(state.vars[0].type, "Bar");
 
     ok &= 0 == strcmp(state.vars[1].name, "LongerV");
     ok &= 0 == strcmp(state.vars[1].type, "LongerT");
+
+    return ok;
+}
+
+static bool test__vm_exec_stmt__DECLARE_atomicdt_default_value(void) {
+    bool ok = true;
+    struct VmState state = { 0 };
+
+    char *stmts[] = {
+        "DECLARE VarI : Integer",
+        "DECLARE VarR : Real",
+        "DECLARE VarC : Char",
+        "DECLARE VarS : String",
+        "DECLARE VarB : Boolean",
+        "DECLARE VarD : Date",
+    };
+    
+    for (size_t i = 0; i < sizeof stmts / sizeof stmts[0]; i += 1) {
+        vm_exec_stmt(&state, stmts[i]);
+    }
+
+    ok &= 0 == strcmp(state.vars[0].name, "VarI");
+    ok &= 0 == strcmp(state.vars[0].type, "Integer");
+    ok &= state.vars[0].valcnt == 1;
+    ok &= state.vars[0].val_arr_starting_idx == 0;
+    ok &= state.vars[0].valesz == sizeof(int);
+    ok &= *(int*)state.vars[0].valdat == 0;
+
+    ok &= 0 == strcmp(state.vars[1].name, "VarR");
+    ok &= 0 == strcmp(state.vars[1].type, "Real");
+    ok &= state.vars[1].valcnt == 1;
+    ok &= state.vars[1].val_arr_starting_idx == 0;
+    ok &= state.vars[1].valesz == sizeof(double);
+    ok &= *(double*)state.vars[1].valdat == 0.0;
+
+    ok &= 0 == strcmp(state.vars[2].name, "VarC");
+    ok &= 0 == strcmp(state.vars[2].type, "Char");
+    ok &= state.vars[2].valcnt == 1;
+    ok &= state.vars[2].val_arr_starting_idx == 0;
+    ok &= state.vars[2].valesz == sizeof(char);
+    ok &= *(char*)state.vars[2].valdat == '\0';
+
+    ok &= 0 == strcmp(state.vars[3].name, "VarS");
+    ok &= 0 == strcmp(state.vars[3].type, "String");
+    ok &= state.vars[3].valcnt == 1;
+    ok &= state.vars[3].val_arr_starting_idx == 0;
+    ok &= state.vars[3].valesz == sizeof "";
+    ok &= 0 == strcmp((char*)state.vars[3].valdat, "");
+
+    ok &= 0 == strcmp(state.vars[4].name, "VarB");
+    ok &= 0 == strcmp(state.vars[4].type, "Boolean");
+    ok &= state.vars[4].valcnt == 1;
+    ok &= state.vars[4].val_arr_starting_idx == 0;
+    ok &= state.vars[4].valesz == sizeof(bool);
+    ok &= *(bool*)state.vars[4].valdat == false;
+
+    ok &= 0 == strcmp(state.vars[5].name, "VarD");
+    ok &= 0 == strcmp(state.vars[5].type, "Date");
+    ok &= state.vars[5].valcnt == 1;
+    ok &= state.vars[5].val_arr_starting_idx == 0;
+    ok &= state.vars[5].valesz == sizeof "00/00/0000";
+    ok &= 0 == strcmp((char*)state.vars[5].valdat, "00/00/0000");
 
     return ok;
 }
@@ -420,7 +481,8 @@ static bool test__example__handling_random_files(void) {
 int main(void) {
     CP_ADD_TEST(test__upper);
     CP_ADD_TEST(test__vm_guess_stmt_kind_from_first_word__DECLARE);
-    CP_ADD_TEST(test__vm_exec_stmt__DECLARE);
+    CP_ADD_TEST(test__vm_exec_stmt__DECLARE_name_and_type_extraction);
+    CP_ADD_TEST(test__vm_exec_stmt__DECLARE_atomicdt_default_value);
     
     CP_ADD_TEST(test__example__comments);
     CP_ADD_TEST(test__example__variable_declarations);

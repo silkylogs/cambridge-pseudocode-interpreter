@@ -19,7 +19,7 @@ char upper(char c) {
     return c;
 }
 
-static bool streq(char *a, char *b) {
+static bool streqci(char *a, char *b) {
     while (*a && *b) {
         char ua = upper(*a);
         char ub = upper(*b);
@@ -32,7 +32,7 @@ static bool streq(char *a, char *b) {
 }
 
 void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out_sg, size_t *out_stmt_len) {
-    if (streq(stmt_ptr, "DECLARE")) {
+    if (streqci(stmt_ptr, "DECLARE")) {
         *out_sg = STMT_DECLARE;
         *out_stmt_len = sizeof "DECLARE" - 1;
         return;
@@ -106,15 +106,17 @@ static bool skip_nul(char **pstr) {
 }
 
 static void vm_alloc_var(struct VmState *state) {
-    if (state->top >= state->cap) {
+    if (state->one_above_top >= state->cap) {
         if (state->cap) state->cap *= 2;
         else state->cap = 8;
 
         size_t alloc_sz = state->cap * sizeof(state->vars[0]);
         struct Var *ptr = realloc(state->vars, alloc_sz);
         assert(ptr);
+        memset(ptr, 0, alloc_sz);
         state->vars = ptr;
     }
+    state->one_above_top += 1;
 }
 
 static void vm_add_var(
@@ -122,19 +124,79 @@ static void vm_add_var(
     char *name, size_t name_len,
     char *type, size_t type_len
 ) {
-    // Initialize name container.
-    size_t top = state->top;
-    memset(state->vars[top].name, '\0', VAR_NAME_LEN);
-    memset(state->vars[top].type, '\0', VAR_NAME_LEN);
+    struct Var *top = &state->vars[state->one_above_top - 1];
 
-    // Copy name to container.
-    size_t max_sz = VAR_NAME_LEN - 1;
-    size_t sz = (name_len >= max_sz) ? max_sz : name_len;
-    memcpy(state->vars[top].name, name, sz);
-    sz = (type_len >= max_sz) ? max_sz : type_len;
-    memcpy(state->vars[top].type, type, sz);
+    // Init name container
+    memset(top->name, '\0', VAR_NAME_LEN);
+    memset(top->type, '\0', VAR_NAME_LEN);
 
-    state->top += 1; // Bump the top.
+    // Copy name to container
+    size_t max = VAR_NAME_LEN - 1;
+    memcpy(top->name, name, (name_len >= max) ? max : name_len);
+    memcpy(top->type, type, (type_len >= max) ? max : type_len);
+
+    // Assign default value. TODO take custom values into account.
+    if (streqci(type, "INTEGER")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx = 0;
+        top->valesz = sizeof(int);
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        *(int *)top->valdat = 0;
+    } else if (streqci(type, "REAL")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx == 0;
+        top->valesz = sizeof(double);
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        *(double *)top->valdat = 0.0;
+    } else if (streqci(type, "CHAR")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx == 0;
+        top->valesz = sizeof(char);
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        *(char *)top->valdat = 0.0;
+    } else if (streqci(type, "STRING")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx == 0;
+        top->valesz = sizeof("");
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        *(char *)top->valdat = 0.0;
+    } else if (streqci(type, "BOOLEAN")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx = 0;
+        top->valesz = sizeof(bool);
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        *(bool *)top->valdat = false;
+    } else if (streqci(type, "DATE")) {
+        top->valcnt = 1;
+        top->val_arr_starting_idx = 0;
+        top->valesz = sizeof("00/00/0000");
+
+        size_t alloc_sz = top->valcnt * top->valesz;
+        top->valdat = malloc(alloc_sz);
+        assert(top->valdat);
+
+        memcpy(top->valdat, "00/00/0000", sizeof "00/00/0000");
+    }
 }
 
 static void vm_decl_var_in_current_scope(
@@ -169,7 +231,7 @@ void vm_exec_stmt(struct VmState *state, char *stmt_ptr) {
             skip_whitespace(&stmt_ptr);
 
             assert(skip_colon(&stmt_ptr) && "Expected colon");
-            
+
             skip_whitespace(&stmt_ptr);
 
             char *var_type; size_t var_type_len;

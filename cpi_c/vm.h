@@ -30,11 +30,15 @@ void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out
 
 #define VAR_NAME_LEN ((size_t)8)
 struct VmState {
-    size_t top;
+    size_t one_above_top;
     size_t cap;
     struct Var {
         char name[VAR_NAME_LEN];
         char type[VAR_NAME_LEN];
+        size_t valcnt; // Value count
+        size_t val_arr_starting_idx;
+        size_t valesz; // Value element size.
+        void *valdat; // Value data
     } *vars;
 };
 
