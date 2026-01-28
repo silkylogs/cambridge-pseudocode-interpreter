@@ -165,7 +165,7 @@ static void vm_add_var(
         top->valdat = malloc(alloc_sz);
         assert(top->valdat);
 
-        *(char *)top->valdat = 0.0;
+        *(char *)top->valdat = '\0';
     } else if (streqci(type, "STRING")) {
         top->valcnt = 1;
         top->val_arr_starting_idx = 0;
@@ -175,7 +175,7 @@ static void vm_add_var(
         top->valdat = malloc(alloc_sz);
         assert(top->valdat);
 
-        *(char *)top->valdat = 0.0;
+        *(char *)top->valdat = "";
     } else if (streqci(type, "BOOLEAN")) {
         top->valcnt = 1;
         top->val_arr_starting_idx = 0;
