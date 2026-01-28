@@ -148,7 +148,7 @@ static void vm_add_var(
         *(int *)top->valdat = 0;
     } else if (streqci(type, "REAL")) {
         top->valcnt = 1;
-        top->val_arr_starting_idx == 0;
+        top->val_arr_starting_idx = 0;
         top->valesz = sizeof(double);
 
         size_t alloc_sz = top->valcnt * top->valesz;
@@ -158,7 +158,7 @@ static void vm_add_var(
         *(double *)top->valdat = 0.0;
     } else if (streqci(type, "CHAR")) {
         top->valcnt = 1;
-        top->val_arr_starting_idx == 0;
+        top->val_arr_starting_idx = 0;
         top->valesz = sizeof(char);
 
         size_t alloc_sz = top->valcnt * top->valesz;
@@ -168,7 +168,7 @@ static void vm_add_var(
         *(char *)top->valdat = 0.0;
     } else if (streqci(type, "STRING")) {
         top->valcnt = 1;
-        top->val_arr_starting_idx == 0;
+        top->val_arr_starting_idx = 0;
         top->valesz = sizeof("");
 
         size_t alloc_sz = top->valcnt * top->valesz;
