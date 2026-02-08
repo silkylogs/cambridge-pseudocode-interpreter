@@ -18,7 +18,69 @@
 // - As function parameter, may be passed by value or reference
 // - Is an array type
 //
-// Most frequent operation is name lookup
+
+// # Statement types
+// - Declarations
+// - Assignments
+// - Branching
+// - Loops
+// - Definitions
+// - Commands
+//
+// # Declarations
+// Every variable or constant has a name. Therefore, the name can be used as a
+// key to map it's value. Declarations dont come with assignments.
+// - Variable
+// - Constant
+// - Array1D
+// - Array2D
+//
+// # Assignments
+// To simplify, this VM will not evaluate expressions. That is the job of the
+// parser. The VM will instead evaluate a simpler form, such as "res" = "arg1"
+// op "arg2" (except for the unary operator)
+// ## Operations
+// Every number is a double. Or a double with it's fractional part truncated and
+// masquerading as an integer.
+// - Addition    |--------------- Has lower predecence
+// - Subtraction |
+// - Multiplication |------------ Has higher predecence
+// - Division       |
+// - Greater than             |-- Has lowest predecence
+// - Lesser than              |
+// - Greater than or equal to |
+// - Lesser than or equal to  |
+// - Not equal to             |
+// - Equal to                 |
+// - Logical AND              |
+// - Logical OR               |
+// - Logical NOT              |
+//
+// # Branching
+// if (condition) instr_ptr += offset;
+// - If
+// - If else
+// - Case
+// - Case otherwise
+//
+// # Loops
+// - For
+// - For with step
+// - Repeat until
+// - While
+//
+// # Definitions
+// - Custom type. "foo.bar.baz" could be a key. Wait, everything's a double or a
+// string.
+// - Procedure (returns nothing)
+// - Function (returns something)
+//
+// # Commands
+// - Call function
+// - Input... A num/string.
+// - Output... A string. Interpreter's job to do the parsing.
+// - File: open, read, write, close, seek
+// - Record: get, put
 
 enum StatementGuess {
     STMT_DECLARE,
@@ -27,6 +89,26 @@ enum StatementGuess {
 
 char upper(char c);
 void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out_sg, size_t *out_stmt_len);
+
+void grow(unsigned char **mem, size_t new_sz);
+
+// Struct members are indices to a char* array instead of pointers
+// Avoids pointer invalidation
+struct Header {
+    size_t next;
+    size_t str;
+    size_t strlen;
+    size_t data;
+    size_t datalen;
+};
+
+struct ProgramData {
+    char *mem;
+    size_t mem_sz;
+    size_t latest_header;
+};
+
+void program_data_append(struct ProgramData *pd, char *zstr, void *data, size_t dat_len);
 
 #define VAR_NAME_LEN ((size_t)8)
 struct VmState {

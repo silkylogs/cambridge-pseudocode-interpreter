@@ -39,6 +39,13 @@ void vm_guess_stmt_kind_from_first_word(char *stmt_ptr, enum StatementGuess *out
     }
 }
 
+void grow(unsigned char **mem, size_t new_sz) {
+    void *ptr = realloc(*mem, new_sz);
+    assert(ptr); // For now.
+    memset(ptr, 0, new_sz);
+    *mem = ptr;
+}
+
 static bool skip_whitespace(char **pstr) {
     bool found = false;
     do {
@@ -206,6 +213,26 @@ static void vm_decl_var_in_current_scope(
 ) {
     vm_alloc_var(state);
     vm_add_var(state, name, name_len, type, type_len);
+}
+
+void program_data_append(struct ProgramData *pd, char *zstr, void *data, size_t dat_len) {
+    size_t alignment = 8; //_Alignof(size_t);
+    size_t slen = strlen(zstr) + 1;
+    slen += alignment - (slen % alignment);
+
+    size_t append_len = sizeof (struct Header) + slen + dat_len;
+    pd->mem_sz += append_len;
+
+    grow(&pd->mem, pd->mem_sz);
+
+    // Fill out header
+    struct Header header;
+    header.next = pd->latest_header;
+    header.str;
+
+    // Memcpy string
+
+    // Memcpy data
 }
 
 void vm_exec_stmt(struct VmState *state, char *stmt_ptr) {

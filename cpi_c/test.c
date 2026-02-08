@@ -1,5 +1,9 @@
-﻿#include <assert.h>
+﻿#include <stdio.h>
+#include <stdlib.h>
+
+#include <assert.h>
 #include "vm.h"
+#include "ir.h"
 
 // -----------------------------------------------------------------
 
@@ -29,6 +33,8 @@
 	printf("%s:%d:1: " LEVEL ": " PRINTF_FMT_STR, __FILE__, __LINE__, __VA_ARGS__)
 //#define CP_LOG(FMT_MSG, ...) CP_LEVEL_LOG("Log", FMT_MSG, __VA_ARGS__)
 #define CP_WARN(FMT_MSG, ...) CP_LEVEL_LOG("Warning", FMT_MSG, __VA_ARGS__)
+
+
 
 #define MAX_TESTS (0x80)
 typedef struct Tests {
@@ -478,7 +484,32 @@ static bool test__example__handling_random_files(void) {
 
 // ---------------------------------------------------------
 
+static bool test__container(void) {
+// -- Label container --
+// Cell size: intptr_t
+// Format: Link zstrpadsz zstr pad ptr -> (Data container)
+// - Link pointer. Is a null terminated linked list.
+// - Number of bytes needed to contain null terminated string with padding.
+// - Null terminated string.
+// - Optional padding.
+// - Pointer based from backing memory, intptr_t aligned.
+
+    size_t backing_memory_size = 8;
+    unsigned char *backing_memory = malloc(backing_memory_size);
+    intptr_t latest = 0;
+    intptr_t content = 0xDEADBEEF000FAAAA;
+    
+    label_container_add(backing_memory, &backing_memory_size, &latest, "FooBarr", content);
+    return content == label_container_find(backing_memory, latest, "FooBarr")
+        && 0 == label_container_find(backing_memory, latest, "BarrFoo");
+
+}
+
+// ---------------------------------------------------------
+
+
 int main(void) {
+
     CP_ADD_TEST(test__upper);
     CP_ADD_TEST(test__vm_guess_stmt_kind_from_first_word__DECLARE);
     CP_ADD_TEST(test__vm_exec_stmt__DECLARE_name_and_type_extraction);
@@ -507,7 +538,11 @@ int main(void) {
     CP_ADD_TEST(test__example__file_handling_operations);
     CP_ADD_TEST(test__example__handling_random_files);
 
+    CP_ADD_TEST(test__container);
+
     CP_RUN_TESTS();
 
     return 0;
 }
+   
+
