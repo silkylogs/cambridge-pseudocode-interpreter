@@ -21,7 +21,7 @@ using Scopes = std::vector<VarsInScope>;
 const std::string name_type_sep = ":";
 const std::string adt_integer = "integer";
 
-static void exec_stmt(VarsInScope &vars, std::string stmt) {
+static bool exec_stmt(VarsInScope &vars, std::string stmt) {
     trim(stmt);
 
     // First word hints at the statement type
@@ -40,7 +40,7 @@ static void exec_stmt(VarsInScope &vars, std::string stmt) {
         lower(var_name);
         if (vars.contains(var_name)) {
             std::print("Variable \"{}\" declared previously in this scope.\n", var_name);
-            exit(0);
+            return false;
         }
 
         // Extract type
@@ -74,11 +74,14 @@ static void exec_stmt(VarsInScope &vars, std::string stmt) {
             std::visit([](auto &&arg) { std::print("{}", arg); }, v.data);
         } else {
             std::print("Variable \"{}\" not found in this scope\n", output_var);
-            assert(0);
+            return false;
         }
     } else { // Assignment
         assert(!"TODO");
+        return false;
     }
+
+    return true;
 }
 
 // TODO: Implement tests. Every branch of this code.
@@ -92,16 +95,42 @@ Test tst(std::string n, std::function<bool()> fn) { return Test(n, fn); }
 
 bool run_tests() {
     std::vector<Test> tests = {
-        tst("Failing", []() -> bool { 
-            return false;
+        tst("Decl stress test", []() -> bool {
+            VarsInScope dat;
+
+            bool ok = exec_stmt(dat, "declare v00 : integer")
+            && exec_stmt(dat, "DECLARE v01 : integer")
+            && exec_stmt(dat, "declare v02: integer")
+            && exec_stmt(dat, "DECLARE v03: integer")
+            && exec_stmt(dat, "declare v04 :integer")
+            && exec_stmt(dat, "DECLARE v05 :integer")
+            && exec_stmt(dat, "declare v06:integer")
+            && exec_stmt(dat, "DECLARE v07:integer")
+            && exec_stmt(dat, "declare v08 : INTEGER")
+            && exec_stmt(dat, "DECLARE v09 : INTEGER")
+            && exec_stmt(dat, "declare v10: INTEGER")
+            && exec_stmt(dat, "DECLARE v11: INTEGER")
+            && exec_stmt(dat, "declare v12 :INTEGER")
+            && exec_stmt(dat, "DECLARE v13 :INTEGER")
+            && exec_stmt(dat, "declare v14:INTEGER")
+            && exec_stmt(dat, "DECLARE v15:INTEGER")
+            ;
+
+            ok &= dat.size() == 16;
+
+            for (const auto& d : dat) {
+                ok &= adt_integer == d.second.type;
+            }
+
+            return ok;
         }),
     };
 
     bool all_ok = true;
     for (size_t i = 0; i < tests.size(); ++i) {
-        auto& test = tests[i];
+        auto &test = tests[i];
         bool ok = test.fn();
-        std::print("{} of {}: Test \"{}\"... {}\n", i+1, tests.size(), test.name, ok);
+        std::print("{} of {}: Test \"{}\"... {}\n", i + 1, tests.size(), test.name, ok);
         all_ok &= ok;
     }
     return all_ok;
