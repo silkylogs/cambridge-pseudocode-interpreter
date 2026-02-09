@@ -7,7 +7,6 @@
 #include <sstream>
 #include <variant>
 #include <functional>
-#include <ranges>
 
 #include "util.hpp"
 
@@ -99,9 +98,10 @@ bool run_tests() {
     };
 
     bool all_ok = true;
-    for (auto&& [index, test] : std::views::enumerate(tests)) {
+    for (size_t i = 0; i < tests.size(); ++i) {
+        auto& test = tests[i];
         bool ok = test.fn();
-        std::print("{} of {}: Test \"{}\"... {}\n", index+1, tests.size(), test.name, ok);
+        std::print("{} of {}: Test \"{}\"... {}\n", i+1, tests.size(), test.name, ok);
         all_ok &= ok;
     }
     return all_ok;
