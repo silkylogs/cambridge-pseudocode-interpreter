@@ -95,7 +95,7 @@ Test tst(std::string n, std::function<bool()> fn) { return Test(n, fn); }
 
 bool run_tests() {
     std::vector<Test> tests = {
-        tst("Decl stress test", []() -> bool {
+        tst("Decl punctuation stress test", []() -> bool {
             VarsInScope dat;
 
             bool ok = exec_stmt(dat, "declare v00 : integer")
@@ -118,7 +118,23 @@ bool run_tests() {
 
             ok &= dat.size() == 16;
 
-            for (const auto& d : dat) {
+            for (const auto &d : dat) {
+                ok &= adt_integer == d.second.type;
+            }
+
+            return ok;
+        }),
+
+        tst("Decl variable case insensitivity", []() -> bool {
+            VarsInScope dat;
+
+            bool ok0 = exec_stmt(dat, "declare variable0 : integer");
+            bool ok1 = !exec_stmt(dat, "DECLARE VaRiAbLe0 : integer");
+            bool ok = ok0 && ok1;
+
+            ok &= dat.size() == 1;
+
+            for (const auto &d : dat) {
                 ok &= adt_integer == d.second.type;
             }
 
