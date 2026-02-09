@@ -55,7 +55,8 @@ static void exec_stmt(VarsInScope &vars, std::string stmt) {
         VarData v{ var_type, default_value };
         vars.insert(std::make_pair(var_name, v));
     } else if ("output" == first_word) {
-        auto output_var = stmt.substr(first_space + 1, stmt.size());
+        constexpr auto space_sep = std::string(" ").size();
+        auto output_var = stmt.substr(first_space + space_sep, stmt.size());
         trim(output_var);
 
         // TODO: Parse output
@@ -68,30 +69,20 @@ static void exec_stmt(VarsInScope &vars, std::string stmt) {
             assert(0);
         }
     } else { // Assignment
-        std::string asssignment_operator = "=";
-
-        auto ass_op_loc = stmt.find(asssignment_operator);
-        std::string dest = stmt.substr(0, ass_op_loc);
-        trim(dest);
-        lower(dest);
-
-        if (auto search = vars.find(dest); search != vars.end()) {
-            std::string expr = stmt.substr(ass_op_loc + asssignment_operator.size(), stmt.size());
-            trim(expr);
-
-            auto val = from_string<int64_t>(expr);
-            auto &dest = search->second;
-            dest.data = val;
-        } else {
-            std::print("Assign: variable \"{}\" not found in this scope\n", first_word);
-            assert(0);
-        }
+        assert(!"TODO");
     }
 }
+
+// TODO: Implement tests. Every branch of this code.
 
 int main() {
     VarsInScope dat;
     exec_stmt(dat, "declare foo: integer");
-    exec_stmt(dat, "foo = 3");
+    exec_stmt(dat, "declare bar: integer");
+
+    exec_stmt(dat, "foo = 1");
+    exec_stmt(dat, "bar <- 2");
+
     exec_stmt(dat, "output foo");
+    exec_stmt(dat, "output bar");
 }
