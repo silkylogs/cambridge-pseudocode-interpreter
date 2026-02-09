@@ -1,0 +1,113 @@
+diff --git a/cpi_cpp/CMakeLists.txt b/cpi_cpp/CMakeLists.txt
+index 776ebdd..4a061f4 100644
+--- a/cpi_cpp/CMakeLists.txt
++++ b/cpi_cpp/CMakeLists.txt
+@@ -55,15 +55,16 @@ endif()
+ project(cpi_cpp)
+ add_executable(cpi_cpp src/main.cpp)
+ target_compile_features(cpi_cpp PUBLIC cxx_std_23)
++#remove_definitions("-DNDEBUG")
+ set_target_properties(cpi_cpp PROPERTIES CXX_EXTENSIONS OFF)
+ 
+ # https://stackoverflow.com/questions/17511496/how-to-create-a-shared-library-with-cmake
+-project(ForthVM)
+-add_library(ForthVM STATIC src/forth.cpp) # https://stackoverflow.com/questions/40739061/error-lnk1104-cannot-open-file-debug-myprojectlib-lib
+-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+-target_compile_features(ForthVM PUBLIC cxx_std_23)
++#project(ForthVM)
++#add_library(ForthVM STATIC src/forth.cpp) # https://stackoverflow.com/questions/40739061/error-lnk1104-cannot-open-file-debug-myprojectlib-lib
++#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
++#target_compile_features(ForthVM PUBLIC cxx_std_23)
+ 
+-target_link_libraries(cpi_cpp ForthVM)
++target_link_libraries(cpi_cpp)
+ 
+ #if(CPI_BUILD_TESTS)
+ #    add_executable(test)
+diff --git a/cpi_cpp/src/main.cpp b/cpi_cpp/src/main.cpp
+index fe59d4f..c070cf4 100644
+--- a/cpi_cpp/src/main.cpp
++++ b/cpi_cpp/src/main.cpp
+@@ -1,5 +1,5 @@
+ ﻿#include <print>
+-#include <map>
++#include <unordered_map>
+ #include <vector>
+ #include <string>
+ #include <cassert>
+@@ -9,7 +9,7 @@ struct Variable {
+     std::string type;
+     Data data;
+ };
+-using ScopeVars = std::map<std::string, Variable>;
++using ScopeVars = std::unordered_map<std::string, Variable>;
+ //using Scopes = std::vector<ScopeVars>;
+ //Scopes scopes;
+ 
+@@ -30,6 +30,18 @@ auto trim = [](std::string &s) {
+     rtrim(s);
+ };
+ 
++auto lower = [](std::string &s) {
++	std::transform(
++		s.begin(), s.end(), 
++		s.begin(), 
++		[](char c) -> char {
++			if (c <= 'Z' && c >= 'A')
++				return c - ('Z' - 'z');
++			return c;
++		}
++	);
++};
++
+ // Parse program
+ // - determine stmt type
+ // - execute stmt
+@@ -44,12 +56,18 @@ static void exec_stmt(ScopeVars &vars, std::string stmt) {
+         auto count = colon - first_space;
+         std::string var_name = stmt.substr(first_space, count);
+         trim(var_name);
++        lower(var_name);
++		if (vars.contains(var_name)) {
++            std::print("Variable \"{}\" declared previously in this scope.\n", var_name);
++            exit(0);
++		}
+ 
+         std::string var_type = stmt.substr(colon + 1, stmt.size());
+         trim(var_type);
++        lower(var_type);
+ 
+         auto default_val_from_type = [](std::string var_type) -> Data {
+-            assert("INTEGER" == var_type);
++            assert("integer" == var_type);
+             {
+                 int64_t num = 0;
+                 Data dat;
+@@ -61,7 +79,7 @@ static void exec_stmt(ScopeVars &vars, std::string stmt) {
+         Data default_value = default_val_from_type(var_type);
+ 
+         Variable v{ var_type, default_value };
+-        vars[var_name] = v;
++		vars.insert(std::make_pair(var_name, v));
+     } else if ("OUTPUT" == first_word) {
+         auto output_var = stmt.substr(first_space + 1, stmt.size());
+         trim(output_var);
+@@ -70,7 +88,7 @@ static void exec_stmt(ScopeVars &vars, std::string stmt) {
+ 
+         if (auto search = vars.find(output_var); search != vars.end()) {
+             auto v = search->second;
+-            assert("INTEGER" == v.type);
++            assert("integer" == v.type);
+             {
+                 int64_t val = *reinterpret_cast<int64_t *>(v.data.data());
+                 std::print("{}", val);
+@@ -84,6 +102,8 @@ static void exec_stmt(ScopeVars &vars, std::string stmt) {
+ 
+ int main() {
+     ScopeVars dat;
+-    exec_stmt(dat, "DECLARE Foo : INTEGER");
++    exec_stmt(dat, "DECLARE int : INTEGER");
++    exec_stmt(dat, "DECLARE Int: INTEGER");
++    exec_stmt(dat, "OUTPUT Foo");
+     exec_stmt(dat, "OUTPUT Foo");
+ }
