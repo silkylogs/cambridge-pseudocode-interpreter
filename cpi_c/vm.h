@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ir.h"
+#include "lblcont.h"
 
 // Virtual machine - Mirrors the kinds of statements the langauge can execute,
 // but simpler.

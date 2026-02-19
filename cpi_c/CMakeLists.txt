@@ -54,12 +54,12 @@ else () # Appleclang, I suppose
   add_compile_options(-Wmost)
 endif()
 
-add_library(Ir STATIC)
-target_sources(Ir PRIVATE ir.c ir.h)
+add_library(Label STATIC)
+target_sources(Label PRIVATE lblcont.c lblcont.h)
 
 add_library(Vm STATIC)
 target_sources(Vm PRIVATE vm.c vm.h)
-target_link_libraries(Vm PRIVATE Ir)
+target_link_libraries(Vm PRIVATE Label)
 
 if(CPI_BUILD_TESTS)
     add_executable(test)
