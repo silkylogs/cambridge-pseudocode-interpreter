@@ -484,6 +484,17 @@ static bool test__example__handling_random_files(void) {
 
 // ---------------------------------------------------------
 
+static bool test__progmem(void) {
+	size_t exp_sz = 0;
+	size_t exp_cap = 50;
+
+	struct ProgMem pm = pmnew(50);
+	bool ok = (exp_sz == pm.sz && exp_cap == pm.cap);
+    pmfree(&pm);
+
+    return ok;
+}
+
 static bool test__container(void) {
     cell expected_content = 0xDEADBEEF;
 
@@ -532,6 +543,7 @@ int main(void) {
     CP_ADD_TEST(test__example__file_handling_operations);
     CP_ADD_TEST(test__example__handling_random_files);
 
+    CP_ADD_TEST(test__progmem);
     CP_ADD_TEST(test__container);
 
     CP_RUN_TESTS();
