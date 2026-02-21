@@ -485,28 +485,19 @@ static bool test__example__handling_random_files(void) {
 // ---------------------------------------------------------
 
 static bool test__container(void) {
-    //size_t backing_memory_size = 8;
-    //unsigned char *backing_memory = malloc(backing_memory_size);
-    //intptr_t latest = 0;
-    //intptr_t content = 0xDEADBEEF000FAAAA;
-    //
-    //label_container_add(backing_memory, &backing_memory_size, &latest, "FooBarr", content);
-    //return content == label_container_find(backing_memory, latest, "FooBarr")
-    //    && 0 == label_container_find(backing_memory, latest, "BarrFoo");
-
     cell expected_content = 0xDEADBEEF;
 
     struct ProgMem pm = pmnew(100);
 
-    insert(&pm, "A bunch of nothing", 0);
-    insert(&pm, "FooBarr", expected_content);
+    lbl_insert(&pm, "A bunch of nothing", 0);
+    lbl_insert(&pm, "FooBarr", expected_content);
 
-    cell actual_content = find(&pm, "FooBarr");
-    //cell actual_nothing = find(&pm, "Not found");
+    cell actual_content = lbl_find(&pm, "FooBarr");
+    cell actual_nothing = lbl_find(&pm, "Not found");
 
     pmfree(&pm);
 
-    return expected_content == actual_content;
+    return expected_content == actual_content && !actual_nothing;
 }
 
 // ---------------------------------------------------------

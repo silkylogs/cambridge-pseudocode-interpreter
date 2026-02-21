@@ -101,8 +101,7 @@ cell pad(cell c) {
     return next - diff;
 }
 
-void insert(
-    struct ProgMem *pm,
+void lbl_insert(struct ProgMem *pm,
     char *name,
     cell ptr_to_data
 ) {
@@ -177,15 +176,15 @@ cell adrpointer(
     struct ProgMem *pm,
     cell adr
 ) {
-    assert(pm->sz + adr <= pm->cap);
+    assert(adr <= pm->cap);
 
     cell adr_strpadsz = adrstrpadsz(pm, adr);
-    assert(pm->sz + adr_strpadsz <= pm->cap);
+    assert(adr_strpadsz <= pm->cap);
 
     cell zstrpadsz = readcell(pm, adr_strpadsz);
     cell adr_pointer = adr + (2 * sizeof adr) + zstrpadsz;
 
-    assert(pm->sz + adr_pointer <= pm->cap);
+    assert(adr_pointer <= pm->cap);
     return adr_pointer;
 }
 
@@ -193,10 +192,10 @@ cell readlink(
     struct ProgMem *pm,
     cell adr
 ) {
-    assert(pm->sz + adr <= pm->cap);
+    assert(adr <= pm->cap);
 
     cell o = adrlink(pm, adr);
-    assert(pm->sz + o <= pm->cap);
+    assert(o <= pm->cap);
 
     return readcell(pm, o);
 }
@@ -205,10 +204,10 @@ cell readstrpadsz(
     struct ProgMem *pm,
     cell adr
 ) {
-    assert(pm->sz + adr <= pm->cap);
+    assert(adr <= pm->cap);
 
     cell o = adrstrpadsz(pm, adr);
-    assert(pm->sz + o <= pm->cap);
+    assert(o <= pm->cap);
 
     return readcell(pm, o);
 }
@@ -217,7 +216,7 @@ char *readzstr(
     struct ProgMem *pm,
     cell adr
 ) {
-    assert(pm->sz + adr <= pm->cap);
+    assert(adr <= pm->cap);
     return pm->memory + adrzstr(pm, adr);
 }
 
@@ -225,10 +224,10 @@ cell readpointer(
     struct ProgMem *pm,
     cell adr
 ) {
-    assert(pm->sz + adr <= pm->cap);
+    assert(adr <= pm->cap);
 
     cell o = adrpointer(pm, adr);
-    assert(pm->sz + o <= pm->cap);
+    assert(o <= pm->cap);
 
     return readcell(pm, o);
 }
@@ -240,8 +239,7 @@ cell readpointer(
 // else
 // - if null link return null
 // - ptr = *link
-intptr_t find(
-    struct ProgMem *pm,
+cell lbl_find(struct ProgMem *pm,
     char *name
 ) {
     cell ptr = pm->llhead;

@@ -28,14 +28,14 @@ void writezstr(struct ProgMem *pm, char *zstr);
 // -- padsz data pad
 struct Data {
     cell sz; // Data + padding, aligned to cell
-    uchar *data;
+    uchar data[0];
 };
 void writedata(struct ProgMem *pm, struct Data what);
 
 // Round up size to nearest sizeof(cell)
 cell pad(cell c);
 
-void insert(struct ProgMem *pm, char *name, cell ptr_to_data);
+void lbl_insert(struct ProgMem *pm, char *name, cell ptr_to_data);
 
 
 // -- reverse pointer
@@ -51,6 +51,6 @@ cell readstrpadsz(struct ProgMem *pm, cell adr);
 char *readzstr(struct ProgMem *pm, cell adr);
 cell readpointer(struct ProgMem *pm, cell adr);
 
-intptr_t find(struct ProgMem *pm, char *name);
+cell lbl_find(struct ProgMem *pm, char *name);
 
 #endif
