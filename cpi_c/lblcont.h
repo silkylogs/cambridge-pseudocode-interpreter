@@ -17,7 +17,7 @@ struct ProgMem pmnew(cell newcap);
 void pmresize(struct ProgMem *pm, cell newcap);
 void pmfree(struct ProgMem *pm);
 
-void write(struct ProgMem *pm, uchar *src, cell srcsz);
+void write(struct ProgMem *pm, void *src, cell srcsz);
 void writecell(struct ProgMem *pm, cell c);
 cell readcell(struct ProgMem *pm, cell adr);
 
@@ -41,9 +41,9 @@ void insert(struct ProgMem *pm, char *name, cell ptr_to_data);
 // -- reverse pointer
 // -- link strpadsz zstr pad ptr
 
-cell adrlink(cell adr);
-cell adrstrpadsz(cell adr);
-cell adrzstr(cell adr);
+cell adrlink(struct ProgMem *pm, cell adr);
+cell adrstrpadsz(struct ProgMem *pm, cell adr);
+cell adrzstr(struct ProgMem *pm, cell adr);
 cell adrpointer(struct ProgMem *pm, cell adr);
 
 cell readlink(struct ProgMem *pm, cell adr);
