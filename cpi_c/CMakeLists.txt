@@ -31,7 +31,7 @@ if (MSVC)
   add_link_options(
     /INCREMENTAL # Hot reloading
   )
-else (GNU)
+elseif (GNU)
   add_compile_options(
     -Wall -Wextra -pedantic
     -Wwrite-strings
@@ -47,13 +47,11 @@ else (GNU)
     -Wsuggest-attribute=format
     -Wformat-nonliteral
     -Werror=vla
-    -fsanitize=address
-    -ggdb
   )
-#elseif (Clang)
-#  add_compile_options(-Wmost)
-#else () # Appleclang, I suppose
-#  add_compile_options(-Wmost)
+elseif (Clang)
+  add_compile_options(-Wmost)
+else () # Appleclang, I suppose
+  add_compile_options(-Wmost)
 endif()
 
 add_library(Label STATIC)
@@ -62,19 +60,13 @@ target_sources(Label PRIVATE lblcont.c lblcont.h)
 add_library(Vm STATIC)
 target_sources(Vm PRIVATE vm.c vm.h)
 target_link_libraries(Vm PRIVATE Label)
-if (MSVC)
-else()
-	target_link_libraries(Vm PRIVATE -fsanitize=address)
-endif()
 
 if(CPI_BUILD_TESTS)
     add_executable(test)
     target_sources(test PRIVATE test.c)
     if (MSVC)
         target_compile_options(test PRIVATE /ZI)
-    else()
-	target_link_libraries(test PRIVATE -fsanitize=address)
-    endif()
+    endif ()
     target_link_libraries(test PRIVATE Vm)
 endif()
 
