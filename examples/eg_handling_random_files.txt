@@ -1,0 +1,29 @@
+
+
+TYPE Student
+DECLARE Surname : STRING
+DECLARE FirstName : STRING
+DECLARE DateOfBirth : DATE
+DECLARE YearGroup : INTEGER
+DECLARE FormGroup : CHAR
+ENDTYPE
+
+DECLARE Pupil : Student
+DECLARE NewPupil : Student
+DECLARE Position : INTEGER
+NewPupil.Surname  \"Johnson\"
+NewPupil.Firstname  \"Leroy\"
+NewPupil.DateOfBirth  02/01/2005
+NewPupil.YearGroup  6
+NewPupil.FormGroup  ꞌAꞌ
+OPENFILE StudentFile.Dat FOR RANDOM
+FOR Position = 20 TO 10 STEP -1
+   SEEK StudentFile.Dat, Position
+   GETRECORD StudentFile.Dat, Pupil
+   SEEK StudentFile.Dat, Position + 1
+   PUTRECORD StudentFile.Dat, Pupil
+ENDFOR
+SEEK StudentFile.Dat, 10
+PUTRECORD StudentFile.Dat, NewPupil
+CLOSEFILE StudentFile.dat
+

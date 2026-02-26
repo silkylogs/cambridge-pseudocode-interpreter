@@ -1,0 +1,8 @@
+
+// This procedure swaps
+// values of X and Y
+PROCEDURE SWAP(BYREF X : INTEGER, Y INTEGER)
+    Temp ← X // temporarily store X
+    X ← Y
+    Y ← Temp
+ENDPROCEDURE // purposefully not terminate with a newline

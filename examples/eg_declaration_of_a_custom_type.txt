@@ -1,0 +1,9 @@
+
+TYPE Student
+   DECLARE Surname : STRING
+   DECLARE FirstName : STRING
+   DECLARE DateOfBirth : DATE
+   DECLARE YearGroup : INTEGER
+   DECLARE FormGroup : CHAR
+ENDTYPE
+

@@ -1,0 +1,20 @@
+
+PROCEDURE DefaultSquare
+   CALL Square(100)
+ENDPROCEDURE
+
+PROCEDURE Square(Size : integer)
+   FOR Side = 1 TO 4
+       MoveForward Size
+       Turn 90
+   ENDFOR
+ENDPROCEDURE
+
+IF Size = Default
+   THEN
+       CALL DefaultSquare
+   ELSE
+   CALL Square(Size)
+ENDIF
+
+

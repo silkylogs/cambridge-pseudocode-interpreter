@@ -1,0 +1,3 @@
+Counter <- 0
+Counter <- Counter + 1
+TotalToPay <- NumberOfHours * HourlyRate

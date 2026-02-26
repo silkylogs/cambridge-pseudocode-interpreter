@@ -1,0 +1,9 @@
+
+INPUT Move
+CASE OF Move
+   ꞌWꞌ: Position  Position – 10
+   ꞌSꞌ: Position  Position + 10
+   ꞌAꞌ: Position  Position – 1
+   ꞌDꞌ: Position  Position + 1
+   OTHERWISE : Beep
+ENDCASE

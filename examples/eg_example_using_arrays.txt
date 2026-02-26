@@ -1,0 +1,13 @@
+// Purposeful inclusion of the "" sign here. 
+// This character may not render correctly in your text editor.
+
+StudentNames[1]  "Ali"
+NoughtsAndCrosses[2,3]  'X'
+StudentNames[n+1]  StudentNames[n] 
+"SavedGame  NoughtsAndCrosses"
+
+"StudentNames [1 TO 30]  \"\"
+
+FOR Index = 1 TO 30
+   StudentNames[Index] ← \"\"
+ENDFOR Index
