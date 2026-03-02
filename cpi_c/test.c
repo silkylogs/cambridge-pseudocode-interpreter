@@ -12,7 +12,7 @@
     ok = true; 
 
 #define TESTEND \
-    printf("%3.3d: %12.12s test \"%s\"\n", test_no, (ok ? "Succeeding" : "Failing"), this_test_name); \
+    printf("%3.3d: %s test \"%s\"\n", test_no, (ok ? "Succeeding" : "Failing   "), this_test_name); \
     all_test_ok &= ok; \
     test_no += 1;
 
