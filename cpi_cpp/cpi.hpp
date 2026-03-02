@@ -3,37 +3,37 @@
 #include "util.hpp"
 
 struct Integer {
-    Integer(std::string_view);
+    Integer(std::string);
     std::string to_string();
     int data;
 };
 
 struct Real {
-    Real(std::string_view);
+    Real(std::string);
     std::string to_string();
     float data;
 };
 
 struct Char {
-    Char(std::string_view);
+    Char(std::string);
     std::string to_string();
     char data;
 };
 
 struct String {
-    String(std::string_view);
+    String(std::string);
     std::string to_string();
     std::string data;
 };
 
 struct Boolean {
-    Boolean(std::string_view);
+    Boolean(std::string);
     std::string to_string();
     bool data;
 };
 
 struct Date {
-    Date(std::string_view);
+    Date(std::string);
     std::string to_string();
     void *data;
 };
