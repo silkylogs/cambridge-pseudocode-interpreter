@@ -7,6 +7,10 @@
 #include <cassert>
 #include <algorithm>
 #include <sstream>
+#include <string_view>
+#include <variant>
+#include <tuple>
+#include <optional>
 
 void ltrim(std::string &s);
 void trim(std::string &s);

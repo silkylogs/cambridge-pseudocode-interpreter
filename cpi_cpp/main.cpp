@@ -9,6 +9,7 @@
 #include <functional>
 
 #include "util.hpp"
+#include "cpi.hpp"
 
 using Data = std::variant<int64_t, std::vector<unsigned char>>;
 struct VarData {
