@@ -5,31 +5,31 @@
 struct Integer {
     Integer(std::string);
     std::string to_string();
-    int data;
+    int data_;
 };
 
 struct Real {
     Real(std::string);
     std::string to_string();
-    float data;
+    float data_;
 };
 
 struct Char {
     Char(std::string);
     std::string to_string();
-    char data;
+    char data_;
 };
 
 struct String {
     String(std::string);
     std::string to_string();
-    std::string data;
+    std::string data_;
 };
 
 struct Boolean {
     Boolean(std::string);
     std::string to_string();
-    bool data;
+    bool data_;
 };
 
 struct Date {

@@ -1,44 +1,44 @@
 #include "cpi.hpp"
 
-Integer::Integer(std::string sv) : data{ std::stoi(sv) } {
+Integer::Integer(std::string sv) : data_{ std::stoi(sv) } {
 }
 
 std::string Integer::to_string() {
-    return std::to_string(this->data);
+    return std::to_string(data_);
 }
 
-Real::Real(std::string sv) : data{ std::stof(sv) } {
+Real::Real(std::string sv) : data_{ std::stof(sv) } {
 }
 
 std::string Real::to_string() {
-    return std::to_string(this->data);
+    return std::to_string(data_);
 }
 
-Char::Char(std::string sv) : data{ sv[0] } {
+Char::Char(std::string sv) : data_{ sv[0] } {
 }
 
 std::string Char::to_string() {
     std::string s = "";
-    s.push_back(this->data);
+    s.push_back(data_);
     return s;
 }
 
-String::String(std::string sv) : data{ sv } {
+String::String(std::string sv) : data_{ sv } {
 }
 
 std::string String::to_string() {
-    return this->data;
+    return data_;
 }
 
-Boolean::Boolean(std::string sv) : data{} {
+Boolean::Boolean(std::string sv) : data_{} {
     lower(sv);
-    if (sv == "true") this->data = true;
-    else if (sv == "false") this->data = false;
+    if (sv == "true") data_ = true;
+    else if (sv == "false") data_ = false;
     else throw std::invalid_argument("Cannot parse as bool");
 }
 
 std::string Boolean::to_string() {
-    return std::to_string(this->data);
+    return std::to_string(data_);
 }
 
 Date::Date(std::string sv) : d_{}, m_{}, y_{} {
