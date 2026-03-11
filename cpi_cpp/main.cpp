@@ -103,7 +103,7 @@ static bool exec_stmt(VarsInScope &vars, std::string stmt) {
             return false;
         }
 
-        auto rhs = rest.substr(rest.find(assop)+assop.size(), rest.size());
+        auto rhs = rest.substr(rest.find(assop) + assop.size(), rest.size());
         trim(rhs);
         lower(rhs);
 
@@ -192,7 +192,7 @@ bool run_tests() {
 
         tst("Name:Type", []() -> bool {
             auto [foo, bar] = name_colon_type("Foo:Bar");
-            return foo=="Foo"&&bar=="Bar";
+            return foo == "Foo" && bar == "Bar";
         }),
 
         tst("Assignment", []() -> bool {
@@ -235,6 +235,18 @@ bool run_tests() {
             } else {
                 ok = false;
             }
+
+            return ok;
+        }),
+
+        tst("Date constructor", []() -> bool {
+            bool ok = true;
+
+            Date d { "6/12/2000" };
+
+            ok &= d.d_ == 6;
+            ok &= d.m_ == 12;
+            ok &= d.y_ == 2000;
 
             return ok;
         }),

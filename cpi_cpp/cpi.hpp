@@ -35,7 +35,9 @@ struct Boolean {
 struct Date {
     Date(std::string);
     std::string to_string();
-    void *data;
+    int d_;
+    int m_;
+    int y_;
 };
 
 struct Datatype {
