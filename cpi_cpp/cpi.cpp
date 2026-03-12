@@ -58,3 +58,24 @@ Date::Date(std::string sv) : d_{}, m_{}, y_{} {
 std::string Date::to_string() {
     return std::format("{:02d}/{:02d}/{:04d}", d_, m_, y_);
 }
+
+Identifier::Identifier(std::string s) : as_string_{} {
+    // They can only contain letters (A–Z, a–z) and digits (0–9).
+    // Other characters should not be used. 
+    bool x = std::find_if(
+        s.begin(),
+        s.end(),
+        [](char c) { return !std::isalnum(c); }
+    ) != s.end();
+
+    if (x) {
+        throw std::invalid_argument("Identifier is not purely alphanumeric");
+    }
+
+    // They must start with a letter and not a digit.
+    if (std::isdigit(s.at(0))) {
+        throw std::invalid_argument("Identifier starts with a digit");
+    }
+
+    as_string_ = s;
+}

@@ -1,12 +1,4 @@
-﻿#include <print>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <cassert>
-#include <algorithm>
-#include <sstream>
-#include <variant>
-#include <functional>
+﻿
 
 #include "util.hpp"
 #include "cpi.hpp"
@@ -250,6 +242,38 @@ bool run_tests() {
 
             return ok;
         }),
+
+        tst("Identifier constructor", []() -> bool {
+            try {
+                Identifier foo { "FooBar" };
+            }
+            catch (std::invalid_argument e) {
+                return false;
+            }
+            return true;
+        }),
+
+        tst("Identifier constructor: not purely alphanumeric", []() -> bool {
+            try {
+                Identifier foo { "Foo_Bar" };
+            }
+            catch (std::invalid_argument e) {
+                std::println("Argument caught: {}", e.what());
+                return true;
+            }
+            return false;
+        }),
+
+        tst("Identifier constructor: starts with a digit", []() -> bool {
+            try {
+                Identifier foo { "5FooBar" };
+            }
+            catch (std::invalid_argument e) {
+                std::println("Argument caught: {}", e.what());
+                return true;
+            }
+            return false;
+        }),
     };
 
     bool all_ok = true;
@@ -259,7 +283,7 @@ bool run_tests() {
         std::println("{} of {}: Test \"{}\"... {}", i + 1, tests.size(), test.name, ok);
         all_ok &= ok;
     }
-    std::println("\nTest summary: all_ok={}", all_ok);
+    std::println("\nTest summary: all_ok = {}", all_ok);
     return all_ok;
 }
 

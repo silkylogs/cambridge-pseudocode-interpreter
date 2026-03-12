@@ -11,6 +11,9 @@
 #include <variant>
 #include <tuple>
 #include <optional>
+#include <cctype>
+#include <stdexcept>
+#include <functional>
 
 void ltrim(std::string &s);
 void trim(std::string &s);

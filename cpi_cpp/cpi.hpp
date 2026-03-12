@@ -40,22 +40,38 @@ struct Date {
     int y_;
 };
 
-struct Datatype {
-    void *handle_to_data_type;
+struct Identifier {
+    Identifier(std::string);
+    std::string as_string_;
 };
 
-enum struct PrimitiveDataType {
+enum struct AtomicDt {
     Integer, Real, Char, String, Boolean, Date,
 };
 
-struct Value {
-    std::variant<Integer, Real, Char, String, Boolean, Date> data;
-    PrimitiveDataType type;
+struct CustomDt {
+  std::string name;
+
+  using EitherAtomicOrCustomDt = std::variant<AtomicDt, CustomDt>;
+  using IdentifierTypePair = std::tuple<Identifier, EitherAtomicOrCustomDt>;
+  std::vector<IdentifierTypePair> members;
 };
 
-struct Identifier {
-    Identifier(std::string_view);
-    std::string as_string;
+using Datatype = std::variant<AtomicDt, CustomDt>;
+
+struct AtomicDtValue {
+    using AtomicDtContainer = std::variant<Integer, Real, Char, String, Boolean, Date>;
+    AtomicDtContainer data;
+    AtomicDt type;
+};
+
+struct CustomDtValue {
+    using EitherCustomOrAtomicDt = std::variant<CustomDtValue, AtomicDtValue>;
+    std::vector<EitherCustomOrAtomicDt> members;
+};
+
+struct Value {
+    std::variant<AtomicDtValue, CustomDtValue> value;
 };
 
 struct Variable {
