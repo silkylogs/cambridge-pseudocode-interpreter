@@ -50,33 +50,34 @@ enum struct AtomicDt {
 };
 
 struct CustomDt {
-  std::string name;
+  Identifier name_;
 
   using EitherAtomicOrCustomDt = std::variant<AtomicDt, CustomDt>;
   using IdentifierTypePair = std::tuple<Identifier, EitherAtomicOrCustomDt>;
-  std::vector<IdentifierTypePair> members;
+  std::vector<IdentifierTypePair> members_;
 };
 
 using Datatype = std::variant<AtomicDt, CustomDt>;
 
 struct AtomicDtValue {
     using AtomicDtContainer = std::variant<Integer, Real, Char, String, Boolean, Date>;
-    AtomicDtContainer data;
-    AtomicDt type;
+    AtomicDtContainer data_;
+    AtomicDt type_;
 };
 
 struct CustomDtValue {
     using EitherCustomOrAtomicDt = std::variant<CustomDtValue, AtomicDtValue>;
-    std::vector<EitherCustomOrAtomicDt> members;
+    std::vector<EitherCustomOrAtomicDt> members_;
 };
 
 struct Value {
-    std::variant<AtomicDtValue, CustomDtValue> value;
+    std::variant<AtomicDtValue, CustomDtValue> value_;
 };
 
 struct Variable {
-    Identifier identifier;
-    Value value;
+    Identifier name_;
+    Value value_;
+    Datatype type_;
 };
 
 enum struct FileMode { Read, Write, Append, Random };
