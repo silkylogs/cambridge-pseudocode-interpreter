@@ -5,3 +5,4 @@ cpi_c
 *.o
 *.exe 
 bin*
+tmp*
