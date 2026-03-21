@@ -1,36 +1,79 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 // ------------------------------------------------------------------
 
 bool strEq(char *a, char *b) {
-	return 0 == strcmp(a, b);
+	return !strcmp(a, b);
 }
 
-char *tryParseNumber(char *in) {
-	char *p = in;
-	while (*p != '\0') {
-		if (!isdigit(*p)) return "ERR_INVALID_NUM";
-		p += 1;
+bool isEmpty(char *s) {
+	return strEq(s, "");
+}
+
+void appendChar(char **str, char c) {
+	if (*str) {
+		size_t zstrLen = strlen(*str) + 1;
+		char *s = realloc(*str, zstrLen + 1);
+		if (!s) {
+			__debugbreak();
+			exit(1);
+		}
+		
+		s[zstrLen - 1] = c;
+		s[zstrLen] = '\0';
+		*str = s;
+	} else {
+		*str = malloc(2);
+		if (!(*str)) {
+			__debugbreak();
+			exit(1);
+		}
+		*(*str + 0) = c;
+		*(*str + 1) = '\0';
 	}
-	return in;
+}
+
+// Leaky!
+char *tryParseInteger(char *in) {
+	if (isEmpty(in)) return "#ERR_EMPTY_INPUT";
+
+	char *out = NULL;
+	appendChar(&out, '#');
+
+	char *p = in;
+	if (*p == '-') appendChar(&out, 'N');
+	else if (*p == '+') return "#ERR_INVALID_NUM";
+	appendChar(&out, 'P');
+
+	while (*p) {
+		if (isdigit(*p)) {
+			appendChar(&out, *p);
+			p += 1;
+		}
+		else return "#ERR_INVALID_NUM";
+	}
+
+	appendChar(&out, '\0');
+	return out;
 }
 
 // ------------------------------------------------------------------
 
 // Executes one full lifetime of a program
 char *eval(char *in) {
-	if (strEq(in, "")) return "ERR_EMPTY_INPUT";
+	if (strEq(in, "")) return "#ERR_EMPTY_INPUT";
 
-	char *num = tryParseNumber(in);
-	if (strEq(num, "ERR_INVALID_NUM")) return "ERR_INVALID_NUM";
+	char *num = tryParseInteger(in);
+	if (strEq(num, "#ERR_INVALID_NUM")) return "#ERR_INVALID_NUM";
 	else return num;
 }
 
 // ------------------------------------------------------------------
 
 void assEq(char *lhs, char *rhs) {
-	if (!(0 == strcmp(lhs, rhs))) {
+	if (!strEq(lhs, rhs)) {
 		printf("Assertion failed: %s == %s\n", lhs, rhs);
 		__debugbreak();
 		exit(1);
@@ -38,7 +81,7 @@ void assEq(char *lhs, char *rhs) {
 }
 
 void assNe(char *lhs, char *rhs) {
-	if (!(0 != strcmp(lhs, rhs))) {
+	if (strEq(lhs, rhs)) {
 		printf("Assertion failed: %s != %s\n", lhs, rhs);
 		__debugbreak();
 		exit(1);
@@ -48,14 +91,16 @@ void assNe(char *lhs, char *rhs) {
 // ------------------------------------------------------------------
 
 int main() {
-	assEq(eval("-42"), "-42");
+	// As-is, leaky.
+	//assEq(tryParseInteger("-42"), "#IN24");
+	//assEq(tryParseInteger("+0"), "#ERR_INVALID_NUM");
+	//assEq(tryParseInteger("78912foo"), "#ERR_INVALID_NUM");
+	//assEq(tryParseInteger("1234567890"), "#IP0987654321");
+	assEq(tryParseInteger("0"), "#IP0");
+	assEq(tryParseInteger("0asdkjl"), "#ERR_INVALID_NUM");
+	assEq(tryParseInteger(""), "#ERR_EMPTY_INPUT");
 
-	assEq(eval("78912foo"), "ERR_INVALID_NUM");
-	assEq(eval("789123487136582961"), "789123487136582961");
-	assEq(eval("0"), "0");
-	assNe(eval("0"), "ERR_INVALID_NUM");
-
-	assEq(eval(""), "ERR_EMPTY_INPUT");
+	assEq(eval(""), "#ERR_EMPTY_INPUT");
 
 	return 0;
 }
