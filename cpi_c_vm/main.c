@@ -1,14 +1,18 @@
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef uint64_t CpiNum;
+
 typedef struct CpiVm CpiVm;
 struct CpiVm {
-	void *mem;
-	size_t sz, cap;
+	CpiNum *mem;
+	size_t cnt;
 };
 
-typedef uint64_t CpiNum;
 const size_t CpiNumsz = sizeof (CpiNum);
 
 typedef enum CpiVmReg CpiVmReg;
@@ -55,65 +59,116 @@ void cpivm_step(CpiVm v) {
 	}
 	switch (t) {
 		case CPIVM_INSTR_IO: {
-			CpiNum start, end;
+			CpiNum start, size;
 			CpiVmInstrIoMode mode;
-			{
-				// mode = cpivm_instr_io_mode(v, ip);
-				mode = v.mem[ip + CPIVM_INSTR_IO_MODE];
-			}
-			{
-				// start = cpivm_instr_io_start(v, ip);
-				start = v.mem[ip + CPIVM_INSTR_IO_START];
-			}
-			{
-				// size = cpivm_instr_io_size(v, ip);
-				size = v.mem[ip + CPIVM_INSTR_IO_SIZE];
-			}
+
+			ip += 1;
+
+			// mode = cpivm_instr_io_mode(v, ip);
+			mode = v.mem[ip + CPIVM_INSTR_IO_MODE];
+			// start = cpivm_instr_io_start(v, ip);
+			start = v.mem[ip + CPIVM_INSTR_IO_START];
+			// size = cpivm_instr_io_size(v, ip);
+			size = v.mem[ip + CPIVM_INSTR_IO_SIZE];
 			switch (mode) {
 				case CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT: {
-					printf("Hello from {%p, %zu, %zu}", v.mem, v.sz, v.cap);
-					printf("Instruction: {%llu, %llu, %llu}", mode, start, size);
-					printf("%*s", v.mem + start, size);
+					int sz = size;
+					char *str = (char*)(&v.mem[start]);
+					printf("CpiVm {v.mem=%p, v.cnt=%zu};\n", v.mem, v.cnt);
+					printf("Instruction: {mode=%x, start=%llu, size=%llu}\n", mode, start, size);
+					printf("printf((insert string fmt here), sz=%d, sz=%d, str=%p);\n", sz, sz, str);
+					printf("%*.*s", sz, sz, str);
 				} break;
 				default: {
-					printf("Illegal IO mode");
+					printf("Illegal IO mode: %x\n", mode);
 				} break;
 			}
 		} break;
 		default: {
-			printf("Illegal instruction");
+			printf("Illegal instruction: %x\n", t);
 		} break;
 	}
 }
 
 typedef struct CpiRom CpiRom;
 struct CpiRom {
-	uint8_t *mem;
-	size_t sz;
+	CpiNum *mem;
+	size_t cnt;
 };
+
+void cpirom_append(CpiRom *rom, CpiNum what) {
+	CpiNum *mem;
+
+	rom->cnt += 1;
+
+	mem = realloc(rom->mem, rom->cnt);
+	if (mem) rom->mem = mem;
+	else printf("Alloc failure: %zu bytes\n", rom->cnt * CpiNumsz);
+
+	mem[rom->cnt - 1] = what;
+}
+
+void cpirom_append_zstr_aligned(CpiRom *rom, char *zstr) {
+	CpiNum *dest = (&rom->mem[rom->cnt]);
+	size_t sz = strlen(zstr) + 1;
+	size_t sz_in_cnt_padded = (sz / CpiNumsz) + 1;
+	size_t i = 0;
+
+	for (; i < sz_in_cnt_padded; ++i) {
+		cpirom_append(rom, 0);
+	}
+
+	memcpy(dest, zstr, sz);
+}
+
+void cpirom_print(CpiRom rom) {
+	int i;
+	printf("[");
+	for (i=0; i < rom.cnt * CpiNumsz; ++i) {
+		if (i % CpiNumsz == 0) printf("\n%4.4x: ", i);
+		char c = *(((char*)rom.mem) + i);
+		isalnum(c) ? printf(" %c, ", c) : printf("%2.2X, ", c);
+	}
+	printf("\n]\n");
+}
+
+void cpivm_allocload(CpiVm *vm, CpiRom r) {
+	vm->cnt = r.cnt;
+	vm->mem = calloc(vm->cnt, CpiNumsz);
+	memcpy(vm->mem, r.mem, vm->cnt * CpiNumsz);
+}
 
 bool run_tests(void) {
 	CpiVm v = {};
 	CpiRom rom = {};
-	size_t dataloc;
+	size_t dataloc = 0;
+	size_t instrloc = 0;
+	size_t i = 0;
 
 	// Register page
-	cpirom_append(&rom, CpiNumsz * 16, 0);
+	for (i=0; i<16; ++i) cpirom_append(&rom, 0);
+	cpirom_print(rom);
 
 	// Data
-	cpirom_append(&rom, sizeof "Hello, world\n", "Hello, world\n");
-	cpirom_align_inflate(&rom);
+	dataloc = rom.cnt;
+	cpirom_append_zstr_aligned(&rom, "Hello, world\n");
+	cpirom_print(rom);
+	instrloc = rom.cnt;
 
 	// Instructions
-	dataloc = rom.sz;
-	cpirom_append(&rom, CpiNumsz, CPIVM_INSTR_IO);
-	cpirom_append(&rom, CpiNumsz, CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT);
-	cpirom_append(&rom, CpiNumsz, dataloc);
-	cpirom_append(&rom, CpiNumsz, sizeof "Hello, world\n");
+	/*
+	cpirom_append(&rom, CPIVM_INSTR_IO);
+	cpirom_append(&rom, CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT);
+	cpirom_append(&rom, dataloc);
+	cpirom_append(&rom, sizeof "Hello, world\n");
+
+	cpirom_print(rom);
 
 	// Run!
-	cpivm_allocload(v, rom, romsz);
-	cpivm_step(v);
+	cpivm_allocload(&v, rom);
+	v.mem[CPIVM_REG_IP] = instrloc;
+	cpivm_step(v);*/
+
 
 	return true;
 }
