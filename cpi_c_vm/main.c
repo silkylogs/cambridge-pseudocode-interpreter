@@ -109,7 +109,7 @@ void cpirom_append(CpiRom *rom, CpiNum what) {
 }
 
 void cpirom_append_zstr_aligned(CpiRom *rom, char *zstr) {
-	CpiNum *dest = (&rom->mem[rom->cnt]);
+	size_t dest = rom->cnt;
 	size_t sz = strlen(zstr) + 1;
 	size_t sz_in_cnt_padded = (sz / CpiNumsz) + 1;
 	size_t i = 0;
@@ -118,7 +118,7 @@ void cpirom_append_zstr_aligned(CpiRom *rom, char *zstr) {
 		cpirom_append(rom, 0);
 	}
 
-	memcpy(dest, zstr, sz);
+	memcpy(&rom->mem[dest], zstr, sz);
 }
 
 void cpirom_print(CpiRom rom) {
@@ -156,7 +156,6 @@ bool run_tests(void) {
 	instrloc = rom.cnt;
 
 	// Instructions
-	/*
 	cpirom_append(&rom, CPIVM_INSTR_IO);
 	cpirom_append(&rom, CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT);
 	cpirom_append(&rom, dataloc);
@@ -167,8 +166,7 @@ bool run_tests(void) {
 	// Run!
 	cpivm_allocload(&v, rom);
 	v.mem[CPIVM_REG_IP] = instrloc;
-	cpivm_step(v);*/
-
+	cpivm_step(v);
 
 	return true;
 }
