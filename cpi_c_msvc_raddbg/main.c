@@ -37,14 +37,14 @@ void appendChar(char **str, char c) {
 
 // Leaky!
 char *tryParseInteger(char *in) {
-	if (isEmpty(in)) return "#ERR_EMPTY_INPUT";
+	if (isEmpty(in)) return "ERR_EMPTY_INPUT";
 
 	char *out = NULL;
 	appendChar(&out, '#');
 
 	char *p = in;
 	if (*p == '-') appendChar(&out, 'N');
-	else if (*p == '+') return "#ERR_INVALID_NUM";
+	else if (*p == '+') return "ERR_EMPTY_NUM";
 	appendChar(&out, 'P');
 
 	while (*p) {
@@ -52,7 +52,7 @@ char *tryParseInteger(char *in) {
 			appendChar(&out, *p);
 			p += 1;
 		}
-		else return "#ERR_INVALID_NUM";
+		else return "ERR_EMPTY_NUM";
 	}
 
 	appendChar(&out, '\0');
@@ -63,10 +63,10 @@ char *tryParseInteger(char *in) {
 
 // Executes one full lifetime of a program
 char *eval(char *in) {
-	if (strEq(in, "")) return "#ERR_EMPTY_INPUT";
+	if (strEq(in, "")) return "ERR_EMPTY_INPUT";
 
 	char *num = tryParseInteger(in);
-	if (strEq(num, "#ERR_INVALID_NUM")) return "#ERR_INVALID_NUM";
+	if (strEq(num, "ERR_EMPTY_NUM")) return "ERR_EMPTY_NUM";
 	else return num;
 }
 
@@ -93,14 +93,14 @@ void assNe(char *lhs, char *rhs) {
 int main() {
 	// As-is, leaky.
 	//assEq(tryParseInteger("-42"), "#IN24");
-	//assEq(tryParseInteger("+0"), "#ERR_INVALID_NUM");
-	//assEq(tryParseInteger("78912foo"), "#ERR_INVALID_NUM");
+	//assEq(tryParseInteger("+0"), "ERR_EMPTY_NUM");
+	//assEq(tryParseInteger("78912foo"), "ERR_EMPTY_NUM");
 	//assEq(tryParseInteger("1234567890"), "#IP0987654321");
-	assEq(tryParseInteger("0"), "#IP0");
-	assEq(tryParseInteger("0asdkjl"), "#ERR_INVALID_NUM");
-	assEq(tryParseInteger(""), "#ERR_EMPTY_INPUT");
+	assEq(tryParseInteger("0"), "0");
+	assEq(tryParseInteger("0asdkjl"), "ERR_INVALID_NUM");
+	assEq(tryParseInteger(""), "ERR_EMPTY_INPUT");
 
-	assEq(eval(""), "#ERR_EMPTY_INPUT");
+	assEq(eval(""), "ERR_EMPTY_INPUT");
 
 	return 0;
 }
