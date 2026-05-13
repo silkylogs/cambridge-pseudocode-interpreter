@@ -214,18 +214,12 @@ void cpivm_instr_impl_zero(void) {
 
 // -- Instruction decoder --
 
+// > Any access of memory using a union, where the union includes the effective type of the memory is legal.
+// https://dependablec.org/#Effective%20type%20in%20c
+// WARNING: This is UB in C++. If planning to port to C++, please just make and return a copy.
 CpiVmInstr cpivm_decode(CpiVm *v) {
 	CpiVmInstr ins;
 	ins = *(CpiVmInstr*)(v->mem + v->reg_ip);
-
-	// Set the active member of the union because ISO C said so
-	switch (ins.instr_idx) {
-	case CPIVM_INSTR_IDX_ZERO: break; 
-	case CPIVM_INSTR_IDX_PRINT_ZSTR: ins.params.print_zstr = ins.params.print_zstr; break;
-	case CPIVM_INSTR_IDX_ENUM_COUNT: break;
-	default: break;
-	}
-
 	return ins;
 }
 
