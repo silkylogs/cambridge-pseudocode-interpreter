@@ -91,17 +91,17 @@ Shadow byte legend (one shadow byte represents 8 application bytes):
 It is just as I feared. My "fix" was really a band-aid. Let me unpack what really happened here.
 
 ```c
-void cpirom_append(CpiRom *rom, CpiNum what) {
-	CpiNum *mem;
+void cpirom_append(CpiRom *rom, CpiWord what) {
+	CpiWord *mem;
 
 	rom->cnt += 1;
 
 	// In the memory reigon allocated here, fair enough
 	mem = realloc(rom->mem, rom->cnt); 
-	// Wait... did I really allocate `rom->cnt` bytes when I meant to allocate `rom->cnt * CpiNumsz` bytes?
+	// Wait... did I really allocate `rom->cnt` bytes when I meant to allocate `rom->cnt * CpiWordsz` bytes?
 
 	if (mem) rom->mem = mem;
-	else printf("Alloc failure: %zu bytes\n", rom->cnt * CpiNumsz);
+	else printf("Alloc failure: %zu bytes\n", rom->cnt * CpiWordsz);
 
 	mem[rom->cnt - 1] = what; // WRITE of size 8 at 0x12d98f4a0030 thread T0
 }
@@ -111,7 +111,7 @@ Applying the patch, no errors are found. With that said, the time has come to cl
 ```
 typedef struct CpiVm CpiVm;
 struct CpiVm {
-	CpiNum *mem;
+	CpiWord *mem;
 	size_t cnt;
 };
 ```
@@ -126,10 +126,10 @@ Perhaps I can come up with a compromise:
 ```
 // The intended usage of this being memcpy-ed into an existing block of memory, which I can interpret how I wish.
 struct CpiVm {
-	CpiNum reg_ip;
-	CpiNum reg_reserved[0xE];
+	CpiWord reg_ip;
+	CpiWord reg_reserved[0xE];
 	
-	CpiNum mem[];
+	CpiWord mem[];
 };
 
 void *mem = malloc(...);
@@ -164,48 +164,64 @@ I don't know how I reached this spot but I will play whack a mole with ASAN anot
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef uint64_t CpiNum;
-const size_t CpiNumsz = sizeof (CpiNum);
+typedef uint64_t CpiWord;
+const size_t CpiWordsz = sizeof (CpiWord);
 typedef unsigned char CpiByte;
 
 typedef struct CpiVm CpiVm;
 struct CpiVm {
-	CpiNum reg_ip;
-	CpiNum reg_reserved[0xE];
+	CpiWord reg_ip;
+	CpiWord reg_hostmem_len;
+	CpiWord reg_hostmem_cap;
+	CpiWord reg_reserved[0xC];
 	
-	CpiByte mem[];
+	CpiByte mem[1024];
 };
 
-typedef enum CpiVmInstr CpiVmInstr;
-enum CpiVmInstr {
-	CPIVM_INSTR_ZERO,
-	CPIVM_INSTR_IO,
-	CPIVM_INSTR_ENUM_COUNT,
+// -- Instructions --
+// Note: for parameters, check implementation (i.e. cpivm_instr_impl_*)
+
+// ISO C compat wastes space
+typedef struct CpiVmInstrParams_print_zstr CpiVmInstrParams_print_zstr;
+struct CpiVmInstr {
+	CpiByte instr_idx;
+	CpiByte padding[sizeof (CpiWord) - 1];
+	union Parameters {
+		CpiVmInstrParams_print_zstr print_zstr;
+	};
+}
+
+typedef enum CpiVmInstrInstrIdx CpiVmInstrInstrIdx;
+enum CpiVmInstrIdx {
+	CPIVM_INSTR_IDX_ZERO,
+	CPIVM_INSTR_IDX_PRINT_ZSTR,
+	CPIVM_INSTR_IDX_ENUM_COUNT,
 };
 
-typedef enum CpiVmInstrIo CpiVmInstrIo;
-enum CpiVmInstrIo {
-	CPIVM_INSTR_IO_MODE,
-	CPIVM_INSTR_IO_START,
-	CPIVM_INSTR_IO_SIZE,
+void cpivm_instr_impl_zero(void) {
+	printf("\nInvalid instruction encountered. Halting.\n");
+	exit(0);
+}
+
+struct CpiVmInstrParams_print_zstr {
+	CpiWord zstr;
 };
 
-typedef enum CpiVmInstrIoMode CpiVmInstrIoMode;
-enum CpiVmInstrIoMode {
-	CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT,
-	CPIVM_INSTR_IO_MODE_IODEVICE_STDIN,
-	CPIVM_INSTR_IO_MODE_DISK_READ,
-	CPIVM_INSTR_IO_MODE_DISK_WRITE,
-	CPIVM_INSTR_IO_MODE_MEM_READ,
-	CPIVM_INSTR_IO_MODE_MEM_WRITE,
-};
+void cpivm_instr_impl_print_zstr(CpiVm *vm, CpiVmInstrParams_print_zstr params) {
+	char *zstr = (char*)vm->mem + params.zstr;
+	printf("%s", zstr);
+}
+
+// -- Instruction decoder --
+
+Cpi
 
 void cpivm_step(CpiVm *v) {
 	printf("Accessing %llx\n", v->reg_ip);
 	CpiVmInstr t = v->mem[v->reg_ip];
 	switch (t) {
 		case CPIVM_INSTR_IO: {
-			CpiNum start, size;
+			CpiWord start, size;
 			CpiVmInstrIoMode mode;
 
 			v->reg_ip += 1;
@@ -288,7 +304,7 @@ bool run_tests(void) {
 	size_t instrloc = 0;
 
 	// Reserved for registers
-	bbsz = 16 * CpiNumsz;
+	bbsz = 16 * CpiWordsz;
 	bb = calloc(bbsz, sizeof (CpiByte));
 	cpibb_print(bb, bbsz);
 
