@@ -183,12 +183,14 @@ struct CpiVm {
 
 // ISO C compat wastes space
 typedef struct CpiVmInstrParams_print_zstr CpiVmInstrParams_print_zstr;
+
+typedef struct CpiVmInstr CpiVmInstr;
 struct CpiVmInstr {
 	CpiByte instr_idx;
 	CpiByte padding[sizeof (CpiWord) - 1];
 	union Parameters {
 		CpiVmInstrParams_print_zstr print_zstr;
-	};
+	} params;
 }
 
 typedef enum CpiVmInstrInstrIdx CpiVmInstrInstrIdx;
@@ -214,7 +216,20 @@ void cpivm_instr_impl_print_zstr(CpiVm *vm, CpiVmInstrParams_print_zstr params) 
 
 // -- Instruction decoder --
 
-Cpi
+CpiVmInstr cpivm_decode(CpiVm *v) {
+	CpiVmInstr ins;
+	ins = *(CpiVmInstr*)(v->mem + ip);
+
+	// Set the active member of the union because ISO C said so
+	switch (ins.instr_idx) {
+	case CPIVM_INSTR_IDX_ZERO: break; 
+	case CPIVM_INSTR_IDX_PRINT_ZSTR: ins.params.print_zstr = ins.params.print_zstr; break;
+	case CPIVM_INSTR_IDX_ENUM_COUNT: break;
+	default: break;
+	}
+
+	return ins;
+}
 
 void cpivm_step(CpiVm *v) {
 	printf("Accessing %llx\n", v->reg_ip);
