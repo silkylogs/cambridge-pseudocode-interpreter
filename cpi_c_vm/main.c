@@ -181,30 +181,7 @@ struct CpiVm {
 // -- Instructions --
 // Note: for parameters, check implementation (i.e. cpivm_instr_impl_*)
 
-// ISO C compat wastes space
 typedef struct CpiVmInstrParams_print_zstr CpiVmInstrParams_print_zstr;
-
-typedef struct CpiVmInstr CpiVmInstr;
-struct CpiVmInstr {
-	CpiByte instr_idx;
-	CpiByte padding[sizeof (CpiWord) - 1];
-	union Parameters {
-		CpiVmInstrParams_print_zstr print_zstr;
-	} params;
-}
-
-typedef enum CpiVmInstrInstrIdx CpiVmInstrInstrIdx;
-enum CpiVmInstrIdx {
-	CPIVM_INSTR_IDX_ZERO,
-	CPIVM_INSTR_IDX_PRINT_ZSTR,
-	CPIVM_INSTR_IDX_ENUM_COUNT,
-};
-
-void cpivm_instr_impl_zero(void) {
-	printf("\nInvalid instruction encountered. Halting.\n");
-	exit(0);
-}
-
 struct CpiVmInstrParams_print_zstr {
 	CpiWord zstr;
 };
@@ -214,11 +191,32 @@ void cpivm_instr_impl_print_zstr(CpiVm *vm, CpiVmInstrParams_print_zstr params) 
 	printf("%s", zstr);
 }
 
+typedef CpiByte CpiVmInstrIdx;
+const CpiVmInstrIdx 
+	CPIVM_INSTR_IDX_ZERO = 0,
+	CPIVM_INSTR_IDX_PRINT_ZSTR = 1,
+	CPIVM_INSTR_IDX_ENUM_COUNT = 2;
+
+// ISO C compat wastes space
+typedef struct CpiVmInstr CpiVmInstr;
+struct CpiVmInstr {
+	CpiVmInstrIdx instr_idx;
+	CpiByte padding[sizeof (CpiWord) - 1];
+	union Parameters {
+		CpiVmInstrParams_print_zstr print_zstr;
+	} params;
+};
+
+void cpivm_instr_impl_zero(void) {
+	printf("\nInvalid instruction index: %2.2x Halting.\n", 0);
+	exit(0);
+}
+
 // -- Instruction decoder --
 
 CpiVmInstr cpivm_decode(CpiVm *v) {
 	CpiVmInstr ins;
-	ins = *(CpiVmInstr*)(v->mem + ip);
+	ins = *(CpiVmInstr*)(v->mem + v->reg_ip);
 
 	// Set the active member of the union because ISO C said so
 	switch (ins.instr_idx) {
@@ -231,121 +229,45 @@ CpiVmInstr cpivm_decode(CpiVm *v) {
 	return ins;
 }
 
+
 void cpivm_step(CpiVm *v) {
-	printf("Accessing %llx\n", v->reg_ip);
-	CpiVmInstr t = v->mem[v->reg_ip];
-	switch (t) {
-		case CPIVM_INSTR_IO: {
-			CpiWord start, size;
-			CpiVmInstrIoMode mode;
+	CpiWord curr_ins_size = 0;
+	CpiVmInstr ins = cpivm_decode(v);
 
-			v->reg_ip += 1;
-
-			// mode = cpivm_instr_io_mode(v, ip);
-			mode = v->mem[v->reg_ip + CPIVM_INSTR_IO_MODE];
-			// start = cpivm_instr_io_start(v, ip);
-			start = v->mem[v->reg_ip + CPIVM_INSTR_IO_START];
-			// size = cpivm_instr_io_size(v, ip);
-			size = v->mem[v->reg_ip + CPIVM_INSTR_IO_SIZE];
-			switch (mode) {
-				case CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT: {
-					int sz = size;
-					char *str = (char*)(&v->mem[start]); // May need to translate from word adddressing to byte addressing
-					//printf("CpiVm {v.mem=%p, v.cnt=%zu};\n", v.mem, v.cnt);
-					//printf("Instruction: {mode=%x, start=%llu, size=%llu}\n", mode, start, size);
-					//printf("printf((insert string fmt here), sz=%d, sz=%d, str=%p);\n", sz, sz, str);
-					printf("%*.*s", sz, sz, str);
-				} break;
-				default: {
-					printf("Illegal IO mode: %x\n", mode);
-				} break;
-			}
-		} break;
-		default: {
-			printf("Illegal instruction: %x\n", t);
-		} break;
+	switch(ins.instr_idx) {
+	case CPIVM_INSTR_IDX_ZERO: {
+		cpivm_instr_impl_zero();
+	} break; 
+	case CPIVM_INSTR_IDX_PRINT_ZSTR: {
+		cpivm_instr_impl_print_zstr(v, ins.params.print_zstr);
+	} break;
+	default: {
+		printf("\nInvalid instruction index: %2.2x Halting.\n", ins.instr_idx);
+		exit(0);
+	} break;
 	}
 }
 
-// cpibb module (Cpi backing buffer)
 
-void cpibb_appendb(CpiByte **bb, size_t *bbsz, CpiByte what) {
-	CpiByte *tmp;
-
-	*bbsz += 1;
-
-	tmp = realloc(*bb, *bbsz);
-	if (tmp) *bb = tmp;
-	else printf("Alloc failure: %zu bytes\n", *bbsz);
-
-	(*bb)[*bbsz - 1] = what;
-}
-
-void cpibb_append_zstr_aligned(CpiByte **bb, size_t *bbsz, char *zstr) {
-	CpiByte *tmp;
-	size_t sz, oldsz;
-       
-	sz = strlen(zstr) + 1;
-	oldsz = *bbsz;
-	*bbsz += sz;
-
-	tmp = realloc(*bb, *bbsz);
-	if (tmp) *bb = tmp;
-	else printf("Alloc failure: %zu bytes\n", *bbsz);
-
-	memcpy(*bb + oldsz, zstr, sz);
-}
-
-void cpibb_print(CpiByte *bb, size_t bbsz) {
-	char c;
-	int i, col_cnt = 8;
-
-	printf("(Size: %zX) [", bbsz);
-	for (i=0; i < bbsz; ++i) {
-		if (i % col_cnt == 0) printf("\n\t%4.4x: ", i);
-		c = bb[i];
-		isalnum(c) ? printf("\'%c, ", c) : printf("%2.2X, ", c);
-	}
-	printf("\n]\n");
-}
+// -- Testing --
 
 bool run_tests(void) {
-	CpiVm *v = NULL;
-	
-	CpiByte *bb = NULL;
-	size_t bbsz = 0;
+	CpiVm *v = calloc(1, sizeof (CpiVm));
 
-	size_t dataloc = 0;
-	size_t instrloc = 0;
+	CpiByte rom[] = { 
+		'\0', 'H', 'e', 'l', 'l', 'o', ' ', ' ', 
+		'w', 'o', 'r', 'l', 'd', '\r', '\n', '\0',
+		CPIVM_INSTR_IDX_PRINT_ZSTR, 0, 0, 0, 0, 0, 0, 0, 1,
+	};
+	memcpy(v->mem, rom, sizeof rom);
 
-	// Reserved for registers
-	bbsz = 16 * CpiWordsz;
-	bb = calloc(bbsz, sizeof (CpiByte));
-	cpibb_print(bb, bbsz);
-
-	// Data
-	dataloc = bbsz;
-	cpibb_append_zstr_aligned(&bb, &bbsz, "Hello, world\n");
-	cpibb_print(bb, bbsz);
-	instrloc = bbsz;
-
-	// Instructions. TODO: write a function that R/Ws them for you.
-	cpibb_appendb(&bb, &bbsz, CPIVM_INSTR_IO);
-	cpibb_appendb(&bb, &bbsz, CPIVM_INSTR_IO_MODE_IODEVICE_STDOUT);
-	cpibb_appendb(&bb, &bbsz, dataloc);
-	printf("dataloc: %zu\n", dataloc);
-	cpibb_appendb(&bb, &bbsz, sizeof "Hello, world\n");
-	printf("bbsz: %zu\n", bbsz);
-	printf("sizeof hello worl: %d\n", bb[bbsz]);
-	cpibb_print(bb, bbsz);
-
-	// Run!
-	v = (CpiVm*)(bb);
-	v->reg_ip = instrloc;
+	v->reg_ip = 16;
 	cpivm_step(v);
 
 	return true;
 }
+
+// -- Main --
 
 int main(int argc, char **argv) {
 	if (CPI_RUN_TESTS) {
