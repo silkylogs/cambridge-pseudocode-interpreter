@@ -43,7 +43,7 @@ void vm_zero_regs(void) {
 }
 
 void vm_dbg_print(void) {
-	int isz = sizeof(word);
+	int isz = sizeof(word) * 2;
 	word i;
 	char status[sizeof (word) * CHAR_BIT] = "THIS_IS_A_PLACEHOLDER_FLAG_STATUS_TODO_ACTUALLY_PLAN_SOMETHING!!";
 
@@ -188,6 +188,7 @@ int main() {
 			printf("After: "); vm_dbg_print();
 		} else if (test_idx == 5) {
 			byte test_ins_assign_lit_byte[3*5] = { 0 };
+			word a_fib_coffee_dude = 0xAf1bC0FFEEd0000d;
 			word i = 0;
 			
 			vm_zero_regs();
@@ -200,8 +201,6 @@ int main() {
 
 			vm_mem = (byte *)test_ins_assign_lit_byte;
 
-			word a_fib_coffee_dude = 0xAf1bC0FFEEd0000d;
-			printf("a fib coffee dude: %llx\n", a_fib_coffee_dude);
 			vm_ass_word_to_reg(0x12345678, vm_r0);
 			vm_ass_word_to_reg(0x9ABCDEF0, vm_r1);
 			vm_ass_word_to_reg(a_fib_coffee_dude, vm_r2);
