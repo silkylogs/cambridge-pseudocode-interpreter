@@ -4,7 +4,7 @@ void exit(int);
 #define CHAR_BIT 8
 
 typedef unsigned char byte;
-typedef unsigned long long word;
+typedef unsigned long word;
 
 byte 
 	*vm_mem, /* Memory. */
@@ -98,7 +98,7 @@ void impl_zero(void) {
 	/*exit(1);*/
 }
 
-/* Null terminated string pointed to by rx. */
+/* Prints a null terminated string pointed to by rx. */
 const byte ins_print_zstr[] = { 1, };
 void impl_print_zstr(void) {
 	word idx = 0;
@@ -147,7 +147,7 @@ void impl_assign_lit_byte(void) {
 	vm_increment(vm_r3);
 }
 
-int main() {
+int main(void) {
 #if CPI_RUN_TESTS
 	int test_idx = 1;
 	for (test_idx = 1; test_idx <= 5; ++test_idx) {
