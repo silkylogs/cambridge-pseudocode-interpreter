@@ -3,8 +3,40 @@ void *memcpy(void *dst, const void *src, unsigned long sz);
 void exit(int);
 #define CHAR_BIT 8
 
+// Defined for sizeof int == 4 * sizeof char. Undefined for anything else.
+typedef unsigned int word;
 typedef unsigned char byte;
-typedef unsigned long word;
+
+typedef struct Vm Vm;
+struct Vm {
+	byte *vm_mem;
+	word vm_ip;
+	word vm_flags;
+	word vm_gpr[1024];
+};
+
+// Instructions:
+// --------------
+// Zero trap: 0
+//
+// Assignment: 1
+// - reg = reg:     0 dst_reg_idx src_reg_idx
+// - reg = mem:     1 dst_reg_idx src_mem_adr
+// - reg = membyte: 2 dst_reg_idx src_mem_byte
+// - mem = reg:     3 dst_mem_adr src_reg_idx
+// - mem[] = mem[]: 4 dst_mem_adr src_mem_adr src_mem_sz
+//
+// Arithmetic (monadic): 2
+// r/m = op r/m
+//
+// Arithmetic (dyadic): 3
+// r/m = r/m op r/m
+//
+// Function call: 4
+// (r/m), ret
+// 
+// External proc call: 5
+// (r/m)
 
 byte 
 	*vm_mem, /* Memory. */
@@ -148,7 +180,7 @@ void impl_assign_lit_byte(void) {
 }
 
 int main(void) {
-#if CPI_RUN_TESTS
+#ifdef CPI_RUN_TESTS
 	int test_idx = 1;
 	for (test_idx = 1; test_idx <= 5; ++test_idx) {
 		printf("\n===[test_idx %d]===\n", test_idx);
