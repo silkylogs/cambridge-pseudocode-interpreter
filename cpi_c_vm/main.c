@@ -7,48 +7,175 @@ void exit(int);
 typedef unsigned int word;
 typedef unsigned char byte;
 
+int write_byte(byte *adr, byte what) {
+	*adr = what;
+	return 1;
+}
+
+int write_word(byte *adr, word what) {
+	adr[0] = (what >> (0 * 4)) & 0xFF;
+	adr[1] = (what >> (1 * 4)) & 0xFF;
+	adr[2] = (what >> (2 * 4)) & 0xFF;
+	adr[3] = (what >> (3 * 4)) & 0xFF;
+	return 4;
+}
+
+int read_byte(byte *adr, byte *out) {
+	*out = *adr;
+	return 1;
+}
+
+int read_word(byte *adr, word *out) {
+	*out = 0;
+	*out |= ((word)adr[0]) << (word)(0 * 4);
+	*out |= ((word)adr[1]) << (word)(1 * 4);
+	*out |= ((word)adr[2]) << (word)(2 * 4);
+	*out |= ((word)adr[3]) << (word)(3 * 4);
+	return 4;
+}
+
 typedef struct Vm Vm;
 struct Vm {
-	byte *vm_mem;
-	word vm_ip;
-	word vm_flags;
-	word vm_gpr[1024];
+	byte vm_mem[1 << 31]; // Whatever a uint32 can address
+	word vm_gpr[1 << 7]; // Whatever a byte can address
+
+	word vm_rip;
+	word vm_rflags;
 };
+
+
+typedef struct Parameters Parameters;
+struct Parameters {
+	byte instr;
+	byte src_rmab, dst_rmab; // Tag
+	byte src_r, dst_r; // Register
+	word src_m, dst_m; // Memory address
+	word src_aptr, src_alen, dst_aptr, dst_alen; // (Pointer, len) array
+	byte src_b, dst_b; // Byte
+	byte op; // Operator
+};
+
+const int INVALID = -0xFFFFFFFF;
 
 // Instructions:
 // --------------
-// Zero trap: 0
+// Key:
+// (register/memory address/(ptr,sz) array/byte)
+// _ = blank or invalid
+// --------------
 //
-// Assignment: 1
-// - reg = reg:     0 dst_reg_idx src_reg_idx
-// - reg = mem:     1 dst_reg_idx src_mem_adr
-// - reg = membyte: 2 dst_reg_idx src_mem_byte
-// - mem = reg:     3 dst_mem_adr src_reg_idx
-// - mem[] = mem[]: 4 dst_mem_adr src_mem_adr src_mem_sz
-//
-// Arithmetic (monadic): 2
-// r/m = op r/m
+// Arithmetic (monadic): 2 // It does not make sense to assign an array to a byte
+// - r/m/a/_ = op r/m/_/b 
+// - a = op a
 //
 // Arithmetic (dyadic): 3
-// r/m = r/m op r/m
+// - r/m/a/_ = r/m/_/b op r/m/_/b
+// - a = a op a
 //
-// Function call: 4
-// (r/m), ret
+// Proc call: 4
+// - r/m/a/_
+//
+// Proc return: 5
 // 
-// External proc call: 5
-// (r/m)
+// External proc call: 6
+// - r/m/a/_
+int instr_write(byte *adr, Parameters p) {
+	word sz = 0;
 
-byte 
-	*vm_mem, /* Memory. */
-	vm_r0[sizeof (word)], /* Register X. Memory. */
-	vm_r1[sizeof (word)], /* Register Y. Memory. */
-	vm_r2[sizeof (word)], /* Accumulator. Arithmetic. */
-	vm_r3[sizeof (word)], /* Instruction pointer. */
-	vm_r4[sizeof (word)]; /* Branch conditionals. */
+	// Base instruction
+	adr[sz] = instr;
+	sz += 1;
 
-byte vm_container[1024];
+	if (instr == 0) {
+		// Zero trap
+		return sz;
+	} else if (instr == 1) {
+		// Assignment: r/m/a/b = r/m/a/b
+		
+		// Disallow b = a
+		if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
+		adr[sz] = p.src_rmab;
+		sz += 1;
 
-/* Assumes little endian. */
+		if (p.src_rmab == 0) {
+			adr[sz] = p.src_r;
+			sz += 1;
+		} else if (p.src_rmab == 1) {
+			adr[sz] = (p.src_m >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_m >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_m >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_m >> (3 * 4)) & 0xFF;
+			sz += 1;
+		} else if (src_rmab == 2) {
+			adr[sz] = (p.src_aptr >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_aptr >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_aptr >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_aptr >> (3 * 4)) & 0xFF;
+			sz += 1;
+
+			adr[sz] = (p.src_alen >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_alen >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_alen >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.src_alen >> (3 * 4)) & 0xFF;
+			sz += 1;
+		} else {
+			return INVALID;
+		}
+
+		if (p.dst_rmab == 0) {
+			adr[sz] = p.dst_r;
+			sz += 1;
+		} else if (p.dst_rmab == 1) {
+			adr[sz] = (p.dst_m >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_m >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_m >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_m >> (3 * 4)) & 0xFF;
+			sz += 1;
+		} else if (dst_rmab == 2) {
+			adr[sz] = (p.dst_aptr >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_aptr >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_aptr >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_aptr >> (3 * 4)) & 0xFF;
+			sz += 1;
+
+			adr[sz] = (p.dst_alen >> (0 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_alen >> (1 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_alen >> (2 * 4)) & 0xFF;
+			sz += 1;
+			adr[sz] = (p.dst_alen >> (3 * 4)) & 0xFF;
+			sz += 1;
+		} else if (src_rmab == 3) {
+			adr[sz] = p.dst_b;
+			sz += 1;
+		} else {
+			return INVALID;
+		}
+	} else {
+		return INVALID;
+	}
+
+}
+
+/*
+
+// Assumes little endian. 
 word vm_ass_reg_to_word(byte *reg) {
 	word out = 0, i = 0;
 	for (i = 0; i < sizeof (word); ++i) {
@@ -57,7 +184,7 @@ word vm_ass_reg_to_word(byte *reg) {
 	return out;
 }
 
-/* Assumes little endian. */
+// Assumes little endian. 
 void vm_ass_word_to_reg(word ul, byte *reg) {
 	word i = 0;
 	byte mask = ~0;
@@ -80,7 +207,7 @@ void vm_dbg_print(void) {
 	char status[sizeof (word) * CHAR_BIT] = "THIS_IS_A_PLACEHOLDER_FLAG_STATUS_TODO_ACTUALLY_PLAN_SOMETHING!!";
 
 	printf("\n{");
-		/* TODO: Figure out why zero padding is incomplete on appleclang */
+		// TODO: Figure out why zero padding is incomplete on appleclang 
 		printf("\n\trx/r0 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r0));
 		printf("\n\try/r1 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r1));
 		printf("\n\tra/r2 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r2));
@@ -122,15 +249,15 @@ byte *vm_get_reg(byte idx) {
 	}
 }
 
-/* Print ip, error message, exit. */
+// Print ip, error message, exit. 
 const byte ins_zero[] = { 0, }; 
 void impl_zero(void) {
 	printf("\nError: Zero trap.\n");
 	vm_dbg_print();
-	/*exit(1);*/
+	//exit(1);
 }
 
-/* Prints a null terminated string pointed to by rx. */
+// Prints a null terminated string pointed to by rx. 
 const byte ins_print_zstr[] = { 1, };
 void impl_print_zstr(void) {
 	word idx = 0;
@@ -140,7 +267,7 @@ void impl_print_zstr(void) {
 	vm_increment(vm_r3);
 }
 
-/* Prints ry characters starting from rx. */
+// Prints ry characters starting from rx. 
 const byte ins_print_lstr[] = { 2, }; 
 void impl_print_lstr(void) {
 	word start = 0, len = 0, i = 0;
@@ -155,7 +282,7 @@ void impl_print_lstr(void) {
 	vm_increment(vm_r3);
 }
 
-/* Assign literal to register. Clears the high bytes. */
+// Assign literal to register. Clears the high bytes. 
 word ins_write_assign_lit_byte(byte *out, byte reg_idx, byte literal) {
 	byte *start = out;
 	*out = 3; out++;
@@ -257,3 +384,5 @@ int main(void) {
 #endif
 	return 0;
 }
+
+*/
