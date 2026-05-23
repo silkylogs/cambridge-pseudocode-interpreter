@@ -98,75 +98,30 @@ int instr_write(byte *adr, Parameters p) {
 		sz += 1;
 
 		if (p.src_rmab == 0) {
-			adr[sz] = p.src_r;
-			sz += 1;
+			sz += write_byte(adr, p.src_r);
 		} else if (p.src_rmab == 1) {
-			adr[sz] = (p.src_m >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_m >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_m >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_m >> (3 * 4)) & 0xFF;
-			sz += 1;
+			sz += write_word(adr, p.src_m);
 		} else if (src_rmab == 2) {
-			adr[sz] = (p.src_aptr >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_aptr >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_aptr >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_aptr >> (3 * 4)) & 0xFF;
-			sz += 1;
-
-			adr[sz] = (p.src_alen >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_alen >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_alen >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.src_alen >> (3 * 4)) & 0xFF;
-			sz += 1;
+			sz += write_word(adr, p.src_aptr);
+			sz += write_word(adr, p.src_alen);
 		} else {
 			return INVALID;
 		}
 
 		if (p.dst_rmab == 0) {
-			adr[sz] = p.dst_r;
-			sz += 1;
+			sz += write_byte(adr, p.dst_r);
 		} else if (p.dst_rmab == 1) {
-			adr[sz] = (p.dst_m >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_m >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_m >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_m >> (3 * 4)) & 0xFF;
-			sz += 1;
-		} else if (dst_rmab == 2) {
-			adr[sz] = (p.dst_aptr >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_aptr >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_aptr >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_aptr >> (3 * 4)) & 0xFF;
-			sz += 1;
-
-			adr[sz] = (p.dst_alen >> (0 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_alen >> (1 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_alen >> (2 * 4)) & 0xFF;
-			sz += 1;
-			adr[sz] = (p.dst_alen >> (3 * 4)) & 0xFF;
-			sz += 1;
-		} else if (src_rmab == 3) {
-			adr[sz] = p.dst_b;
-			sz += 1;
+			sz += write_word(adr, p.dst_m);
+		} else if (p.dst_rmab == 2) {
+			sz += write_word(adr, p.dst_aptr);
+			sz += write_word(adr, p.dst_alen);
+		} else if (p.dst_rmab == 3) {
+			sz += write_byte(adr, p.dst_b);
 		} else {
 			return INVALID;
 		}
+
+		return sz;
 	} else {
 		return INVALID;
 	}
