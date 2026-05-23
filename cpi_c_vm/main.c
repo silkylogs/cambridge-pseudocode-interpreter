@@ -8,94 +8,131 @@ typedef unsigned int word;
 typedef unsigned char byte;
 
 int write_byte(byte *adr, byte what) {
-	*adr = what;
-	return 1;
+ *adr = what;
+ return 1;
 }
 
 int write_word(byte *adr, word what) {
-	adr[0] = (what >> (0 * 4)) & 0xFF;
-	adr[1] = (what >> (1 * 4)) & 0xFF;
-	adr[2] = (what >> (2 * 4)) & 0xFF;
-	adr[3] = (what >> (3 * 4)) & 0xFF;
-	return 4;
+ adr[0] = (what >> (0 * 4)) & 0xFF;
+ adr[1] = (what >> (1 * 4)) & 0xFF;
+ adr[2] = (what >> (2 * 4)) & 0xFF;
+ adr[3] = (what >> (3 * 4)) & 0xFF;
+ return 4;
 }
 
 int read_byte(byte *adr, byte *out) {
-	*out = *adr;
-	return 1;
+ *out = *adr;
+ return 1;
 }
 
 int read_word(byte *adr, word *out) {
-	*out = 0;
-	*out |= ((word)adr[0]) << (word)(0 * 4);
-	*out |= ((word)adr[1]) << (word)(1 * 4);
-	*out |= ((word)adr[2]) << (word)(2 * 4);
-	*out |= ((word)adr[3]) << (word)(3 * 4);
-	return 4;
+ *out = 0;
+ *out |= ((word)adr[0]) << (word)(0 * 4);
+ *out |= ((word)adr[1]) << (word)(1 * 4);
+ *out |= ((word)adr[2]) << (word)(2 * 4);
+ *out |= ((word)adr[3]) << (word)(3 * 4);
+ return 4;
 }
 
 typedef struct Vm Vm;
 struct Vm {
-	byte vm_mem[1 << 31]; // Whatever a uint32 can address
-	word vm_gpr[1 << 7]; // Whatever a byte can address
+ byte vm_mem[(unsigned)1 << 31]; // Whatever a uint32 can address
+ word vm_gpr[(unsigned)1 << 7]; // Whatever a byte can address
 
-	word vm_rip;
-	word vm_rflags;
+ word vm_rip;
+ word vm_rflags;
 };
 
 
 typedef struct Parameters Parameters;
 struct Parameters {
-	byte instr;
-	byte src_rmab, dst_rmab; // Tag
-	byte src_r, dst_r; // Register
-	word src_m, dst_m; // Memory address
-	word src_aptr, src_alen, dst_aptr, dst_alen; // (Pointer, len) array
-	byte src_b, dst_b; // Byte
-	byte op; // Operator
+ byte instr;
+ byte src_rmab, dst_rmab; // Tag
+ byte src_r, dst_r; // Register
+ word src_m, dst_m; // Memory address
+ word src_aptr, src_alen, dst_aptr, dst_alen; // (Pointer, len) array
+ byte src_b, dst_b; // Byte
+ byte op; // Operator
 };
 
 const int INVALID = 0xFFFFFFFF;
 
 int write_src_rmab(byte *adr, Parameters p) {
-	int sz = 0;
+ int sz = 0;
 
-	sz += write_byte(adr, p.src_rmab);
-	if (p.src_rmab == 0) {
-		sz += write_byte(adr, p.src_r);
-	} else if (p.src_rmab == 1) {
-		sz += write_word(adr, p.src_m);
-	} else if (p.src_rmab == 2) {
-		sz += write_word(adr, p.src_aptr);
-		sz += write_word(adr, p.src_alen);
-	} else if (p.src_rmab == 3) {
-		sz += write_byte(adr, p.src_b);
-	} else {
-		return INVALID;
-	}
+ sz += write_byte(adr, p.src_rmab);
+ if (p.src_rmab == 0) {
+  sz += write_byte(adr, p.src_r);
+ } else if (p.src_rmab == 1) {
+  sz += write_word(adr, p.src_m);
+ } else if (p.src_rmab == 2) {
+  sz += write_word(adr, p.src_aptr);
+  sz += write_word(adr, p.src_alen);
+ } else if (p.src_rmab == 3) {
+  sz += write_byte(adr, p.src_b);
+ } else {
+  return INVALID;
+ }
 
-	return sz;
+ return sz;
 }
 
 int write_dst_rmab(byte *adr, Parameters p) {
-	int sz = 0;
+ int sz = 0;
 
-	sz += write_byte(adr, p.dst_rmab);
-	if (p.dst_rmab == 0) {
-		sz += write_byte(adr, p.dst_r);
-	} else if (p.dst_rmab == 1) {
-		sz += write_word(adr, p.dst_m);
-	} else if (p.dst_rmab == 2) {
-		sz += write_word(adr, p.dst_aptr);
-		sz += write_word(adr, p.dst_alen);
-	} else if (p.dst_rmab == 3) {
-		sz += write_byte(adr, p.dst_b);
-	} else {
-		return INVALID;
-	}
+ sz += write_byte(adr, p.dst_rmab);
+ if (p.dst_rmab == 0) {
+  sz += write_byte(adr, p.dst_r);
+ } else if (p.dst_rmab == 1) {
+  sz += write_word(adr, p.dst_m);
+ } else if (p.dst_rmab == 2) {
+  sz += write_word(adr, p.dst_aptr);
+  sz += write_word(adr, p.dst_alen);
+ } else if (p.dst_rmab == 3) {
+  sz += write_byte(adr, p.dst_b);
+ } else {
+  return INVALID;
+ }
 
-	return sz;
+ return sz;
 }
+
+int read_src_rmab(byte *adr, Parameters *p) {
+ int sz = 0;
+ sz += read_byte(adr, &p->src_rmab);
+ if (p->src_rmab == 0) {
+  sz += read_byte(adr, &p->src_r);
+ } else if (p->src_rmab == 1) {
+  sz += read_word(adr, &p->src_m);
+ } else if (p->src_rmab == 2) {
+  sz += read_word(adr, &p->src_aptr);
+  sz += read_word(adr, &p->src_alen);
+ } else if (p->src_rmab == 3) {
+  sz += read_byte(adr, &p->src_b);
+ } else {
+  return INVALID;
+ }
+ return sz;
+}
+
+int read_dst_rmab(byte *adr, Parameters *p) {
+ int sz = 0;
+ sz += read_byte(adr, &p->dst_rmab);
+ if (p->dst_rmab == 0) {
+  sz += read_byte(adr, &p->dst_r);
+ } else if (p->dst_rmab == 1) {
+  sz += read_word(adr, &p->dst_m);
+ } else if (p->dst_rmab == 2) {
+  sz += read_word(adr, &p->dst_aptr);
+  sz += read_word(adr, &p->dst_alen);
+ } else if (p->dst_rmab == 3) {
+  sz += read_byte(adr, &p->dst_b);
+ } else {
+  return INVALID;
+ }
+ return sz;
+}
+
 
 // Instructions:
 // --------------
@@ -103,258 +140,191 @@ int write_dst_rmab(byte *adr, Parameters p) {
 // (register/memory address/(ptr,sz) array/byte)
 // _ = blank or invalid
 int write_instr(byte *adr, Parameters p) {
-	word sz = 0;
+ word sz = 0;
 
-	// Base instruction
-	sz += write_byte(adr, p.instr);
-	if (p.instr == 0) {
-		// Zero trap
-
-		return sz;
-	} else if (p.instr == 1) {
-		// Assignment: 
-		// - r/m/a/_ = op r/m/_/b 
-		// - a = a
-		
-		// Disallow b = a
-		if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
-
-		sz += write_dst_rmab(adr, p);
-		sz += write_src_rmab(adr, p);
-
-		return sz;
-	} else if (p.instr == 2) {
-		// Arithmetic (monadic)
-		// - r/m/a/_ = op r/m/_/b 
-		// - a = op a
-		
-		// Disallow b = a
-		if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
-
-		sz += write_dst_rmab(adr, p);
-		sz += write_byte(adr, p.op);
-		sz += write_src_rmab(adr, p);
-
-		return sz;
-	} else if (p.instr == 3) {
-		// Proc call
-		// - r/m/a/_
-		if (p.src_rmab == 3) return INVALID;
-
-		sz += write_src_rmab(adr, p);
-
-		return sz;
-	} else if (p.instr == 4) {
-		// Proc return
-
-		return sz;
-	} else if (p.instr == 5) {
-		// External proc call: 5
-		// - r/m/a/_
-		if (p.src_rmab == 3) return INVALID;
-
-		sz += write_src_rmab(adr, p);
-
-		return sz;
-	} else {
-		return INVALID;
-	}
-
-	return sz;
+ // Base instruction
+ sz += write_byte(adr + sz, p.instr);
+ if (p.instr == 0) {
+  // Zero trap
+  return sz;
+ } else if (p.instr == 1) {
+  // Assignment: 
+  // - r/m/a/_ = op r/m/_/b 
+  // - a = a
+  // Disallow b = a
+  if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
+  sz += write_dst_rmab(adr + sz, p);
+  sz += write_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p.instr == 2) {
+  // Arithmetic (monadic)
+  // - r/m/a/_ = op r/m/_/b 
+  // - a = op a
+  if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
+  sz += write_dst_rmab(adr + sz, p);
+  sz += write_byte(adr + sz, p.op);
+  sz += write_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p.instr == 3) {
+  // Proc call
+  // - r/m/a/_
+  if (p.src_rmab == 3) return INVALID;
+  sz += write_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p.instr == 4) {
+  // Proc return
+  return sz;
+ } else if (p.instr == 5) {
+  // External proc call: 5
+  // - r/m/a/_
+  if (p.src_rmab == 3) return INVALID;
+  sz += write_src_rmab(adr + sz, p);
+  return sz;
+ } else {
+  return INVALID;
+ }
+ return sz;
 }
 
+int read_instr(byte *adr, Parameters *p) {
+ Parameters zeroed = {0};
+ word sz = 0;
 
-/*
-void vm_zero_regs(void) {
-	vm_ass_word_to_reg(0, vm_r0);
-	vm_ass_word_to_reg(0, vm_r1);
-	vm_ass_word_to_reg(0, vm_r2);
-	vm_ass_word_to_reg(0, vm_r3);
-	vm_ass_word_to_reg(0, vm_r4);
+ *p = zeroed;
+ sz += read_byte(adr + sz, &p->instr);
+ if (p->instr == 0) {
+  return sz;
+ } else if (p->instr == 1) {
+  if (p->src_rmab == 3 && p->dst_rmab == 2) return INVALID;
+  sz += read_dst_rmab(adr + sz, p);
+  sz += read_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p->instr == 2) {
+  if (p->src_rmab == 3 && p->dst_rmab == 2) return INVALID;
+  sz += read_dst_rmab(adr + sz, p);
+  sz += read_byte(adr + sz, &p->op);
+  sz += read_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p->instr == 3) {
+  if (p->src_rmab == 3) return INVALID;
+  sz += read_src_rmab(adr + sz, p);
+  return sz;
+ } else if (p->instr == 4) {
+  return sz;
+ } else if (p->instr == 5) {
+  if (p->src_rmab == 3) return INVALID;
+  sz += read_src_rmab(adr + sz, p);
+  return sz;
+ } else {
+  return INVALID;
+ }
+ return sz;
 }
 
-void vm_dbg_print(void) {
-	int isz = sizeof(word) * 2;
-	word i;
-	char status[sizeof (word) * CHAR_BIT] = "THIS_IS_A_PLACEHOLDER_FLAG_STATUS_TODO_ACTUALLY_PLAN_SOMETHING!!";
-
-	printf("\n{");
-		// TODO: Figure out why zero padding is incomplete on appleclang 
-		printf("\n\trx/r0 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r0));
-		printf("\n\try/r1 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r1));
-		printf("\n\tra/r2 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r2));
-		printf("\n\tri/r3 = %*.*llx,", isz, isz, vm_ass_reg_to_word(vm_r3));
-		printf("\n\trf/r4 = ");
-
-		for (i=0; i<sizeof(word)*CHAR_BIT; ++i) {
-			word x = (vm_ass_reg_to_word(vm_r4) >> i) & 1;
-			printf("%c", x ? status[i] : '.');
-		}
-	printf("\n}\n");
-}
-
-void vm_increment(byte *reg) {
-	word tmp;
-
-	tmp = vm_ass_reg_to_word(reg);
-	tmp += 1;
-	vm_ass_word_to_reg(tmp, reg);
-}
-
-byte vm_load_byte(byte *reg) {
-	word ptr;
-	ptr = vm_ass_reg_to_word(reg);
-	return vm_mem[ptr];
-}
-
-byte *vm_get_reg(byte idx) {
-	switch (idx) {
-		case 0: return vm_r0;
-		case 1: return vm_r1;
-		case 2: return vm_r2;
-		case 3: return vm_r3;
-		case 4: return vm_r4;
-		default:
-			printf("\nError: invalid register index %d\n", idx);
-			vm_dbg_print();
-			exit(2);
-	}
-}
-
-// Print ip, error message, exit. 
-const byte ins_zero[] = { 0, }; 
-void impl_zero(void) {
-	printf("\nError: Zero trap.\n");
-	vm_dbg_print();
-	//exit(1);
-}
-
-// Prints a null terminated string pointed to by rx. 
-const byte ins_print_zstr[] = { 1, };
-void impl_print_zstr(void) {
-	word idx = 0;
-
-	idx = vm_ass_reg_to_word(vm_r0);
-	printf("%s", &vm_mem[idx]);
-	vm_increment(vm_r3);
-}
-
-// Prints ry characters starting from rx. 
-const byte ins_print_lstr[] = { 2, }; 
-void impl_print_lstr(void) {
-	word start = 0, len = 0, i = 0;
-
-	start = vm_ass_reg_to_word(vm_r0);
-	len = vm_ass_reg_to_word(vm_r1);
-
-	for (i = 0; i < len; ++i) {
-		printf("%c", vm_mem[start + i]);
-	}
-	
-	vm_increment(vm_r3);
-}
-
-// Assign literal to register. Clears the high bytes. 
-word ins_write_assign_lit_byte(byte *out, byte reg_idx, byte literal) {
-	byte *start = out;
-	*out = 3; out++;
-	*out = reg_idx; out++;
-	*out = literal; out++;
-	return out - start;
-}
-
-void impl_assign_lit_byte(void) {
-	byte *dst_reg=0, tmp=0;
-
-	vm_increment(vm_r3);
-	tmp = vm_load_byte(vm_r3);
-	dst_reg = vm_get_reg(tmp);
-
-	vm_increment(vm_r3);
-	tmp = vm_load_byte(vm_r3);
-	vm_ass_word_to_reg(0, dst_reg);
-	dst_reg[0] = tmp;
-
-	vm_increment(vm_r3);
+void print_instr(Parameters p) {
+ printf("Instruction type: %d\n", p.instr);
+ if (p.instr == 0) {
+  printf(" Zero instruction\n");
+ } else if (p.instr == 1) {
+  printf(" Assignment:\n");
+  printf("  Destination type: %d\n", p.dst_rmab);
+  if (p.dst_rmab == 0) {
+   printf("   Register: %d\n", p.dst_r);
+  } else if (p.dst_rmab == 1) {
+   printf("   Memory: %x\n", p.dst_m);
+  } else if (p.dst_rmab == 2) {
+   printf("   Array: %x,%d\n", p.dst_aptr, p.dst_alen);
+  } else if (p.dst_rmab == 3) {
+   printf("   Byte: %x\n", p.dst_b);
+  } else {
+   printf("   Error: Invalid type\n");
+  }
+  printf("  Source type: %d\n", p.src_rmab);
+  if (p.src_rmab == 0) {
+   printf("   Register: %d\n", p.src_r);
+  } else if (p.src_rmab == 1) {
+   printf("   Memory: %x\n", p.src_m);
+  } else if (p.src_rmab == 2) {
+   printf("   Array: %x,%d\n", p.src_aptr, p.src_alen);
+  } else if (p.src_rmab == 3) {
+   printf("   Byte: %x\n", p.src_b);
+  } else {
+   printf("   Error: Invalid type\n");
+  }
+ } else if (p.instr == 2) {
+  printf(" Arithmetic:\n");
+  printf("  Destination type: %d\n", p.dst_rmab);
+  if (p.dst_rmab == 0) {
+   printf("   Register: %d\n", p.dst_r);
+  } else if (p.dst_rmab == 1) {
+   printf("   Memory: %x\n", p.dst_m);
+  } else if (p.dst_rmab == 2) {
+   printf("   Array: %x,%d\n", p.dst_aptr, p.dst_alen);
+  } else if (p.dst_rmab == 3) {
+   printf("   Byte: %x\n", p.dst_b);
+  } else {
+   printf("   Error: Invalid type\n");
+  }
+  printf("  Operator: %d\n", p.op);
+  {
+   char *o[] = { "+", "-", "*", "/" };
+   printf("   %s\n", o[p.op]);
+  }
+  printf("  Source type: %d\n", p.src_rmab);
+  if (p.src_rmab == 0) {
+   printf("   Register: %d\n", p.src_r);
+  } else if (p.src_rmab == 1) {
+   printf("   Memory: %x\n", p.src_m);
+  } else if (p.src_rmab == 2) {
+   printf("   Array: %x,%d\n", p.src_aptr, p.src_alen);
+  } else if (p.src_rmab == 3) {
+   printf("   Byte: %x\n", p.src_b);
+  } else {
+   printf("   Error: Invalid type\n");
+  }
+ } else if (p.instr == 3) {
+  printf(" Proc call:\n");
+ } else if (p.instr == 4) {
+  printf(" Proc return:\n");
+ } else if (p.instr == 5) {
+  printf(" External proc call:\n");
+ } else {
+   printf(" Error: Invalid type\n");
+ }
 }
 
 int main(void) {
 #ifdef CPI_RUN_TESTS
-	int test_idx = 1;
-	for (test_idx = 1; test_idx <= 5; ++test_idx) {
-		printf("\n===[test_idx %d]===\n", test_idx);
+ int test_idx = 1;
+ for (test_idx = 1; test_idx <= 5; ++test_idx) {
+  printf("\n===[test_idx %d]===\n", test_idx);
 
-		if (test_idx == 1) {
-			printf("Hello world\n");
-		} else if (test_idx == 2) {
-			vm_zero_regs();
-
-			vm_mem = (byte *)ins_zero;
-
-			printf("Before: "); vm_dbg_print();
-			impl_zero();
-			printf("After: "); vm_dbg_print();
-		} else if (test_idx == 3) {
-			const byte test_ins_print_zstr[] = { 1, 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\r', '\n', 0, };
-			vm_zero_regs();
-
-			vm_mem = (byte *)test_ins_print_zstr;
-			vm_ass_word_to_reg(1, vm_r0);
-
-			printf("Before: "); vm_dbg_print();
-			impl_print_zstr();
-			printf("After: "); vm_dbg_print();
-		} else if (test_idx == 4) {
-			const byte test_ins_print_lstr[] = { 2, 'l', 'o', 'n', 'g', 0, 's', 't', 'r', 'i', 'n', 'g', '\r', '\n', };
-			word lit_ptr = 1, lit_len = 13;
-			
-			vm_zero_regs();
-			
-			vm_mem = (byte *)test_ins_print_lstr;
-			vm_ass_word_to_reg(lit_ptr, vm_r0);
-			vm_ass_word_to_reg(lit_len, vm_r1);
-
-			printf("Before: "); vm_dbg_print();
-			impl_print_lstr();
-			printf("After: "); vm_dbg_print();
-		} else if (test_idx == 5) {
-			byte test_ins_assign_lit_byte[3*5] = { 0 };
-			word a_fib_coffee_dude = 0xAf1bC0FFEEd0000d;
-			word i = 0;
-			
-			vm_zero_regs();
-
-			i += ins_write_assign_lit_byte(test_ins_assign_lit_byte + i, 0, 0x67);
-			i += ins_write_assign_lit_byte(test_ins_assign_lit_byte + i, 1, 0x22);
-			i += ins_write_assign_lit_byte(test_ins_assign_lit_byte + i, 2, 0x33);
-			i += ins_write_assign_lit_byte(test_ins_assign_lit_byte + i, 4, 0xFF);
-			i += ins_write_assign_lit_byte(test_ins_assign_lit_byte + i, 3, 0x55);
-
-			vm_mem = (byte *)test_ins_assign_lit_byte;
-
-			vm_ass_word_to_reg(0x12345678, vm_r0);
-			vm_ass_word_to_reg(0x9ABCDEF0, vm_r1);
-			vm_ass_word_to_reg(a_fib_coffee_dude, vm_r2);
-			vm_ass_word_to_reg(0         , vm_r3);
-			vm_ass_word_to_reg(0xCAFEBABE, vm_r4);
-			printf("Before: "); vm_dbg_print();
-
-			impl_assign_lit_byte();
-			printf("Pass 0: "); vm_dbg_print();
-			impl_assign_lit_byte();
-			printf("Pass 1: "); vm_dbg_print();
-			impl_assign_lit_byte();
-			printf("Pass 2: "); vm_dbg_print();
-			impl_assign_lit_byte();
-			printf("Pass 3: "); vm_dbg_print();
-			impl_assign_lit_byte();
-			printf("Pass 4: "); vm_dbg_print();
-		}
-	}
+  if (test_idx == 1) {
+   byte mem[1] = { 0 };
+   Parameters p = { .instr=0, };
+   write_instr(mem, p);
+   read_instr(mem, &p);
+   print_instr(p);
+  } else if (test_idx == 2) {
+   byte mem[10] = { 0 };
+   Parameters p = { 
+    .instr = 1, 
+    .dst_rmab = 0,
+    .dst_r = 2,
+    .src_rmab = 0,
+    .src_r = 3,
+   };
+   write_instr(mem, p);
+   read_instr(mem, &p);
+   print_instr(p);
+  } else if (test_idx == 3) {
+  } else if (test_idx == 4) {
+  } else if (test_idx == 5) {
+  }
+ }
 #else
-	printf("Actually run the program here.\n");
+ printf("Actually run the program here.\n");
 #endif
-	return 0;
+ return 0;
 }
 
-*/
