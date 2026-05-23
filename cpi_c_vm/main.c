@@ -55,99 +55,116 @@ struct Parameters {
 	byte op; // Operator
 };
 
-const int INVALID = -0xFFFFFFFF;
+const int INVALID = 0xFFFFFFFF;
+
+int write_src_rmab(byte *adr, Parameters p) {
+	int sz = 0;
+
+	sz += write_byte(adr, p.src_rmab);
+	if (p.src_rmab == 0) {
+		sz += write_byte(adr, p.src_r);
+	} else if (p.src_rmab == 1) {
+		sz += write_word(adr, p.src_m);
+	} else if (p.src_rmab == 2) {
+		sz += write_word(adr, p.src_aptr);
+		sz += write_word(adr, p.src_alen);
+	} else if (p.src_rmab == 3) {
+		sz += write_byte(adr, p.src_b);
+	} else {
+		return INVALID;
+	}
+
+	return sz;
+}
+
+int write_dst_rmab(byte *adr, Parameters p) {
+	int sz = 0;
+
+	sz += write_byte(adr, p.dst_rmab);
+	if (p.dst_rmab == 0) {
+		sz += write_byte(adr, p.dst_r);
+	} else if (p.dst_rmab == 1) {
+		sz += write_word(adr, p.dst_m);
+	} else if (p.dst_rmab == 2) {
+		sz += write_word(adr, p.dst_aptr);
+		sz += write_word(adr, p.dst_alen);
+	} else if (p.dst_rmab == 3) {
+		sz += write_byte(adr, p.dst_b);
+	} else {
+		return INVALID;
+	}
+
+	return sz;
+}
 
 // Instructions:
 // --------------
 // Key:
 // (register/memory address/(ptr,sz) array/byte)
 // _ = blank or invalid
-// --------------
-//
-// Arithmetic (monadic): 2 // It does not make sense to assign an array to a byte
-// - r/m/a/_ = op r/m/_/b 
-// - a = op a
-//
-// Arithmetic (dyadic): 3
-// - r/m/a/_ = r/m/_/b op r/m/_/b
-// - a = a op a
-//
-// Proc call: 4
-// - r/m/a/_
-//
-// Proc return: 5
-// 
-// External proc call: 6
-// - r/m/a/_
-int instr_write(byte *adr, Parameters p) {
+int write_instr(byte *adr, Parameters p) {
 	word sz = 0;
 
 	// Base instruction
-	adr[sz] = instr;
-	sz += 1;
-
-	if (instr == 0) {
+	sz += write_byte(adr, p.instr);
+	if (p.instr == 0) {
 		// Zero trap
+
 		return sz;
-	} else if (instr == 1) {
-		// Assignment: r/m/a/b = r/m/a/b
+	} else if (p.instr == 1) {
+		// Assignment: 
+		// - r/m/a/_ = op r/m/_/b 
+		// - a = a
 		
 		// Disallow b = a
 		if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
-		adr[sz] = p.src_rmab;
-		sz += 1;
 
-		if (p.src_rmab == 0) {
-			sz += write_byte(adr, p.src_r);
-		} else if (p.src_rmab == 1) {
-			sz += write_word(adr, p.src_m);
-		} else if (src_rmab == 2) {
-			sz += write_word(adr, p.src_aptr);
-			sz += write_word(adr, p.src_alen);
-		} else {
-			return INVALID;
-		}
+		sz += write_dst_rmab(adr, p);
+		sz += write_src_rmab(adr, p);
 
-		if (p.dst_rmab == 0) {
-			sz += write_byte(adr, p.dst_r);
-		} else if (p.dst_rmab == 1) {
-			sz += write_word(adr, p.dst_m);
-		} else if (p.dst_rmab == 2) {
-			sz += write_word(adr, p.dst_aptr);
-			sz += write_word(adr, p.dst_alen);
-		} else if (p.dst_rmab == 3) {
-			sz += write_byte(adr, p.dst_b);
-		} else {
-			return INVALID;
-		}
+		return sz;
+	} else if (p.instr == 2) {
+		// Arithmetic (monadic)
+		// - r/m/a/_ = op r/m/_/b 
+		// - a = op a
+		
+		// Disallow b = a
+		if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
+
+		sz += write_dst_rmab(adr, p);
+		sz += write_byte(adr, p.op);
+		sz += write_src_rmab(adr, p);
+
+		return sz;
+	} else if (p.instr == 3) {
+		// Proc call
+		// - r/m/a/_
+		if (p.src_rmab == 3) return INVALID;
+
+		sz += write_src_rmab(adr, p);
+
+		return sz;
+	} else if (p.instr == 4) {
+		// Proc return
+
+		return sz;
+	} else if (p.instr == 5) {
+		// External proc call: 5
+		// - r/m/a/_
+		if (p.src_rmab == 3) return INVALID;
+
+		sz += write_src_rmab(adr, p);
 
 		return sz;
 	} else {
 		return INVALID;
 	}
 
+	return sz;
 }
+
 
 /*
-
-// Assumes little endian. 
-word vm_ass_reg_to_word(byte *reg) {
-	word out = 0, i = 0;
-	for (i = 0; i < sizeof (word); ++i) {
-		out += (word)reg[i] << (i * CHAR_BIT);
-	}
-	return out;
-}
-
-// Assumes little endian. 
-void vm_ass_word_to_reg(word ul, byte *reg) {
-	word i = 0;
-	byte mask = ~0;
-	for (i = 0; i < sizeof(word); ++i) {
-		reg[i] = (ul >> (i * CHAR_BIT)) & (word)mask;
-	}
-}
-
 void vm_zero_regs(void) {
 	vm_ass_word_to_reg(0, vm_r0);
 	vm_ass_word_to_reg(0, vm_r1);
