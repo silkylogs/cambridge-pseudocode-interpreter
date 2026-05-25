@@ -254,28 +254,43 @@ struct Vm {
  word vm_rflags;
 };
 
-/*
-int exec_instr(byte *adr) {
- struct Parameters zeroed = {0};
- word sz = 0;
+void print_vm(Vm *v) {
+ int i = 0;
 
- *p = zeroed;
- sz += read_byte(adr + sz, &p->instr);
+ printf("\nVm { \n");
+ printf("\tRIP = 0x%8.8x\n", v->vm_rip);
+ printf("\tRFLAGS = 0x%8.8x\n", v->vm_rflags);
+ for (i=0; i<(unsigned)1 << 7; ++i) printf("\tGPR %X = %8.8x\n", i, v->vm_gpr[i]);
+ printf("}\n");
+}
+
+void vm_exec_instr(Vm *v, struct Param p) {
  if (p->instr == 0) {
-  return sz;
+  printf("\nZero trap. Exiting.\n");
+  print_vm(v);
+  exit(0);
  } else if (p->instr == 1) {
-  if (p->src_rmab == 3 && p->dst_rmab == 2) return INVALID;
-  sz += read_dst_rmab(adr + sz, p);
-  sz += read_src_rmab(adr + sz, p);
-  return sz;
+  if (p->src_rmab == 3 && p->dst_rmab == 2) {
+   printf("\nIllegal instruction.\n");
+   print_vm(v);
+   exit(1);
+  }
+  vm_assign_rmab(vm, &p->dst_rmab, p->src_rmab);
  } else if (p->instr == 2) {
-  if (p->src_rmab == 3 && p->dst_rmab == 2) return INVALID;
-  sz += read_dst_rmab(adr + sz, p);
-  sz += read_byte(adr + sz, &p->op);
-  sz += read_src_rmab(adr + sz, p);
-  return sz;
+  struct Rmab temp = {0};
+  if (p->src_rmab == 3 && p->dst_rmab == 2) {
+   printf("\nIllegal instruction.\n");
+   print_vm(v);
+   exit(1);
+  }
+  vm_arithmetic(vm, &temp, 
+  vm_assign_rmab(vm, &p->dst_rmab, p->src_rmab);
  } else if (p->instr == 3) {
-  if (p->src_rmab == 3) return INVALID;
+  if (p->src_rmab == 3) {
+   printf("\nIllegal instruction.\n");
+   print_vm(v);
+   exit(1);
+  }
   sz += read_src_rmab(adr + sz, p);
   return sz;
  } else if (p->instr == 4) {
@@ -289,7 +304,6 @@ int exec_instr(byte *adr) {
  }
  return sz;
 }
-*/
 
 int main(void) {
 #if defined CPI_RUN_TESTS
