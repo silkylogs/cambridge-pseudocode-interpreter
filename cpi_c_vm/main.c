@@ -1,7 +1,19 @@
-int printf(const char *, ...);
-void *memcpy(void *dst, const void *src, unsigned long sz);
-void exit(int);
-#define CHAR_BIT 8
+#if defined PLATFORM_APPLE
+ int printf(const char *, ...);
+ void *memcpy(void *dst, const void *src, unsigned long sz);
+ void exit(int);
+ #define CHAR_BIT 8
+#elif defined PLATFORM_WINDOWS
+ int printf(const char *, ...);
+ void *memcpy(void *dst, const void *src, unsigned long long sz);
+ void exit(int);
+ #define CHAR_BIT 8
+#else 
+ int printf(const char *, ...);
+ void *memcpy(void *dst, const void *src, unsigned long long sz);
+ void exit(int);
+ #define CHAR_BIT 8
+#endif
 
 // Defined for sizeof int == 4 * sizeof char. Undefined for anything else.
 typedef unsigned int word;
@@ -34,160 +46,217 @@ int read_word(byte *adr, word *out) {
  return 4;
 }
 
+struct Rmab {
+ byte rmab_tag;
+ byte rmab_r_reg;
+ word rmab_m_mem;
+ word rmab_a_ptr, rmab_a_len;
+ byte rmab_b_byte;
+};
+
+void print_byte(byte b) {
+ printf("%2.2x ", b);
+}
+
+void print_rmab_human(struct Rmab r) {
+ if (r.rmab_tag > 3) printf("!!! ");
+ if (r.rmab_tag == 0) printf("GPR %2.2x ", r.rmab_r_reg);
+ else if (r.rmab_tag == 1) printf("MEM 0x%8.8x ", r.rmab_m_mem);
+ else if (r.rmab_tag == 2) printf("ARR 0x%x 0x%8.8x ", r.rmab_a_ptr, r.rmab_a_len);
+ else if (r.rmab_tag == 3) printf("BYT 0x%2.2x ", r.rmab_b_byte);
+}
+
+
+void print_word_bytes(word i) {
+  byte tmp[4] = { 0 };
+  memcpy(tmp, &i, sizeof i);
+  for (i = 0; i < sizeof i; ++i) {
+   print_byte(tmp[i]);
+  }
+}
+
+void print_rmab_bytes(struct Rmab r) {
+ if (r.rmab_tag > 3) {
+  printf("!! ");
+  return;
+ }
+ print_byte(r.rmab_tag);
+ if (r.rmab_tag == 0) {
+  print_byte(r.rmab_r_reg);
+ } else if (r.rmab_tag == 1) {
+  print_word_bytes(r.rmab_m_mem);
+ } else if (r.rmab_tag == 2) {
+  print_word_bytes(r.rmab_a_ptr);
+  print_word_bytes(r.rmab_a_len);
+ } else if (r.rmab_tag == 3) {
+  print_byte(r.rmab_b_byte);
+ }
+}
+
+const int INVALID = 0xFFFFFFFF;
+
+int write_rmab(byte *adr, struct Rmab r) {
+ byte *start = adr;
+
+ adr += write_byte(adr, r.rmab_tag);
+ if (r.rmab_tag == 0) {
+  adr += write_byte(adr, r.rmab_r_reg);
+ } else if (r.rmab_tag == 1) {
+  adr += write_word(adr, r.rmab_m_mem);
+ } else if (r.rmab_tag == 2) {
+  adr += write_word(adr, r.rmab_a_ptr);
+  adr += write_word(adr, r.rmab_a_len);
+ } else if (r.rmab_tag == 3) {
+  adr += write_byte(adr, r.rmab_b_byte);
+ } else {
+  return INVALID;
+ }
+ return adr - start;
+}
+
+int read_rmab(byte *adr, struct Rmab *r) {
+ byte *start = adr;
+
+ adr += read_byte(adr, &r->rmab_tag);
+ if (r->rmab_tag == 0) {
+  adr += read_byte(adr, &r->rmab_r_reg);
+ } else if (r->rmab_tag == 1) {
+  adr += read_word(adr, &r->rmab_m_mem);
+ } else if (r->rmab_tag == 2) {
+  adr += read_word(adr, &r->rmab_a_ptr);
+  adr += read_word(adr, &r->rmab_a_len);
+ } else if (r->rmab_tag == 3) {
+  adr += read_byte(adr, &r->rmab_b_byte);
+ } else {
+  return INVALID;
+ }
+ return adr - start;
+}
+
+struct Param {
+ byte param_instr;
+ struct Rmab param_src, param_dst;
+ byte param_op;
+};
+
+void print_instr_human(struct Param p) {
+ if (p.param_instr == 0) {
+  printf("ZTRAP");
+ } else if (p.param_instr == 1) {
+  printf("ASSGN ");
+  print_rmab_human(p.param_dst);
+  print_rmab_human(p.param_src);
+ } else if (p.param_instr == 2) {
+  printf("ARITH ");
+  print_rmab_human(p.param_dst);
+  {
+   char *o[] = { "+=", "-=", "*=", "/=" };
+   printf("%s ", p.param_op <= 3 ? o[p.param_op] : "!!");
+  }
+  print_rmab_human(p.param_src);
+ } else if (p.param_instr == 3) {
+  printf("CALL ");
+  print_rmab_human(p.param_src);
+ } else if (p.param_instr == 4) {
+  printf("RET");
+ } else if (p.param_instr == 5) {
+  printf("ECALL ");
+  print_rmab_human(p.param_src);
+ } else printf("!!!");
+ printf("\n");
+}
+
+void print_instr_bytes(struct Param p) {
+ if (p.param_instr > 5) { printf("!! "); return; }
+ print_byte(p.param_instr);
+ if (p.param_instr == 0) {
+  ;
+ } else if (p.param_instr == 1) {
+  print_rmab_bytes(p.param_dst);
+  print_rmab_bytes(p.param_src);
+ } else if (p.param_instr == 2) {
+  print_rmab_bytes(p.param_dst);
+  print_byte(p.param_op);
+  print_rmab_bytes(p.param_src);
+ } else if (p.param_instr == 3) {
+  print_rmab_bytes(p.param_src);
+ } else if (p.param_instr == 4) {
+  ;
+ } else if (p.param_instr == 5) {
+  print_rmab_bytes(p.param_src);
+ } else printf("!! ");
+}
+
+int write_instr(byte *adr, struct Param p) {
+ byte *start = adr;
+ 
+ adr += write_byte(adr, p.param_instr);
+ if (p.param_instr == 0) {
+  ;
+ } else if (p.param_instr == 1) {
+  if (p.param_src.rmab_tag == 3 && p.param_dst.rmab_tag == 2) return INVALID;
+  adr += write_rmab(adr, p.param_dst);
+  adr += write_rmab(adr, p.param_src);
+ } else if (p.param_instr == 2) {
+  if (p.param_src.rmab_tag == 3 && p.param_dst.rmab_tag == 2) return INVALID;
+  adr += write_rmab(adr, p.param_dst);
+  adr += write_byte(adr, p.param_op);
+  adr += write_rmab(adr, p.param_src);
+ } else if (p.param_instr == 3) {
+  if (p.param_src.rmab_tag == 3) return INVALID;
+  adr += write_rmab(adr, p.param_src);
+ } else if (p.param_instr == 4) {
+  ;
+ } else if (p.param_instr == 5) {
+  if (p.param_src.rmab_tag == 3) return INVALID;
+  adr += write_rmab(adr, p.param_src);
+ } else {
+  return INVALID;
+ }
+ return adr - start;
+}
+
+int read_instr(byte *adr, struct Param *p) {
+ byte *start = adr;
+ 
+ adr += read_byte(adr, &p->param_instr);
+ if (p->param_instr == 0) {
+  ;
+ } else if (p->param_instr == 1) {
+  if (p->param_src.rmab_tag == 3 && p->param_dst.rmab_tag == 2) return INVALID;
+  adr += read_rmab(adr, &p->param_dst);
+  adr += read_rmab(adr, &p->param_src);
+ } else if (p->param_instr == 2) {
+  if (p->param_src.rmab_tag == 3 && p->param_dst.rmab_tag == 2) return INVALID;
+  adr += read_rmab(adr, &p->param_dst);
+  adr += read_byte(adr, &p->param_op);
+  adr += read_rmab(adr, &p->param_src);
+ } else if (p->param_instr == 3) {
+  if (p->param_src.rmab_tag == 3) return INVALID;
+  adr += read_rmab(adr, &p->param_src);
+ } else if (p->param_instr == 4) {
+  ;
+ } else if (p->param_instr == 5) {
+  if (p->param_src.rmab_tag == 3) return INVALID;
+  adr += read_rmab(adr, &p->param_src);
+ } else {
+  return INVALID;
+ }
+ return adr - start;
+}
+
 typedef struct Vm Vm;
 struct Vm {
- byte vm_mem[(unsigned)1 << 31]; // Whatever a uint32 can address
+ byte *vm_mem;
  word vm_gpr[(unsigned)1 << 7]; // Whatever a byte can address
 
  word vm_rip;
  word vm_rflags;
 };
 
-
-typedef struct Parameters Parameters;
-struct Parameters {
- byte instr;
- byte src_rmab, dst_rmab; // Tag
- byte src_r, dst_r; // Register
- word src_m, dst_m; // Memory address
- word src_aptr, src_alen, dst_aptr, dst_alen; // (Pointer, len) array
- byte src_b, dst_b; // Byte
- byte op; // Operator
-};
-
-const int INVALID = 0xFFFFFFFF;
-
-int write_src_rmab(byte *adr, Parameters p) {
- int sz = 0;
-
- sz += write_byte(adr, p.src_rmab);
- if (p.src_rmab == 0) {
-  sz += write_byte(adr, p.src_r);
- } else if (p.src_rmab == 1) {
-  sz += write_word(adr, p.src_m);
- } else if (p.src_rmab == 2) {
-  sz += write_word(adr, p.src_aptr);
-  sz += write_word(adr, p.src_alen);
- } else if (p.src_rmab == 3) {
-  sz += write_byte(adr, p.src_b);
- } else {
-  return INVALID;
- }
-
- return sz;
-}
-
-int write_dst_rmab(byte *adr, Parameters p) {
- int sz = 0;
-
- sz += write_byte(adr, p.dst_rmab);
- if (p.dst_rmab == 0) {
-  sz += write_byte(adr, p.dst_r);
- } else if (p.dst_rmab == 1) {
-  sz += write_word(adr, p.dst_m);
- } else if (p.dst_rmab == 2) {
-  sz += write_word(adr, p.dst_aptr);
-  sz += write_word(adr, p.dst_alen);
- } else if (p.dst_rmab == 3) {
-  sz += write_byte(adr, p.dst_b);
- } else {
-  return INVALID;
- }
-
- return sz;
-}
-
-int read_src_rmab(byte *adr, Parameters *p) {
- int sz = 0;
- sz += read_byte(adr, &p->src_rmab);
- if (p->src_rmab == 0) {
-  sz += read_byte(adr, &p->src_r);
- } else if (p->src_rmab == 1) {
-  sz += read_word(adr, &p->src_m);
- } else if (p->src_rmab == 2) {
-  sz += read_word(adr, &p->src_aptr);
-  sz += read_word(adr, &p->src_alen);
- } else if (p->src_rmab == 3) {
-  sz += read_byte(adr, &p->src_b);
- } else {
-  return INVALID;
- }
- return sz;
-}
-
-int read_dst_rmab(byte *adr, Parameters *p) {
- int sz = 0;
- sz += read_byte(adr, &p->dst_rmab);
- if (p->dst_rmab == 0) {
-  sz += read_byte(adr, &p->dst_r);
- } else if (p->dst_rmab == 1) {
-  sz += read_word(adr, &p->dst_m);
- } else if (p->dst_rmab == 2) {
-  sz += read_word(adr, &p->dst_aptr);
-  sz += read_word(adr, &p->dst_alen);
- } else if (p->dst_rmab == 3) {
-  sz += read_byte(adr, &p->dst_b);
- } else {
-  return INVALID;
- }
- return sz;
-}
-
-
-// Instructions:
-// --------------
-// Key:
-// (register/memory address/(ptr,sz) array/byte)
-// _ = blank or invalid
-int write_instr(byte *adr, Parameters p) {
- word sz = 0;
-
- // Base instruction
- sz += write_byte(adr + sz, p.instr);
- if (p.instr == 0) {
-  // Zero trap
-  return sz;
- } else if (p.instr == 1) {
-  // Assignment: 
-  // - r/m/a/_ = op r/m/_/b 
-  // - a = a
-  // Disallow b = a
-  if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
-  sz += write_dst_rmab(adr + sz, p);
-  sz += write_src_rmab(adr + sz, p);
-  return sz;
- } else if (p.instr == 2) {
-  // Arithmetic (monadic)
-  // - r/m/a/_ = op r/m/_/b 
-  // - a = op a
-  if (p.src_rmab == 3 && p.dst_rmab == 2) return INVALID;
-  sz += write_dst_rmab(adr + sz, p);
-  sz += write_byte(adr + sz, p.op);
-  sz += write_src_rmab(adr + sz, p);
-  return sz;
- } else if (p.instr == 3) {
-  // Proc call
-  // - r/m/a/_
-  if (p.src_rmab == 3) return INVALID;
-  sz += write_src_rmab(adr + sz, p);
-  return sz;
- } else if (p.instr == 4) {
-  // Proc return
-  return sz;
- } else if (p.instr == 5) {
-  // External proc call: 5
-  // - r/m/a/_
-  if (p.src_rmab == 3) return INVALID;
-  sz += write_src_rmab(adr + sz, p);
-  return sz;
- } else {
-  return INVALID;
- }
- return sz;
-}
-
-int read_instr(byte *adr, Parameters *p) {
- Parameters zeroed = {0};
+/*
+int exec_instr(byte *adr) {
+ struct Parameters zeroed = {0};
  word sz = 0;
 
  *p = zeroed;
@@ -220,106 +289,144 @@ int read_instr(byte *adr, Parameters *p) {
  }
  return sz;
 }
-
-void print_instr(Parameters p) {
- printf("Instruction type: %d\n", p.instr);
- if (p.instr == 0) {
-  printf(" Zero instruction\n");
- } else if (p.instr == 1) {
-  printf(" Assignment:\n");
-  printf("  Destination type: %d\n", p.dst_rmab);
-  if (p.dst_rmab == 0) {
-   printf("   Register: %d\n", p.dst_r);
-  } else if (p.dst_rmab == 1) {
-   printf("   Memory: %x\n", p.dst_m);
-  } else if (p.dst_rmab == 2) {
-   printf("   Array: %x,%d\n", p.dst_aptr, p.dst_alen);
-  } else if (p.dst_rmab == 3) {
-   printf("   Byte: %x\n", p.dst_b);
-  } else {
-   printf("   Error: Invalid type\n");
-  }
-  printf("  Source type: %d\n", p.src_rmab);
-  if (p.src_rmab == 0) {
-   printf("   Register: %d\n", p.src_r);
-  } else if (p.src_rmab == 1) {
-   printf("   Memory: %x\n", p.src_m);
-  } else if (p.src_rmab == 2) {
-   printf("   Array: %x,%d\n", p.src_aptr, p.src_alen);
-  } else if (p.src_rmab == 3) {
-   printf("   Byte: %x\n", p.src_b);
-  } else {
-   printf("   Error: Invalid type\n");
-  }
- } else if (p.instr == 2) {
-  printf(" Arithmetic:\n");
-  printf("  Destination type: %d\n", p.dst_rmab);
-  if (p.dst_rmab == 0) {
-   printf("   Register: %d\n", p.dst_r);
-  } else if (p.dst_rmab == 1) {
-   printf("   Memory: %x\n", p.dst_m);
-  } else if (p.dst_rmab == 2) {
-   printf("   Array: %x,%d\n", p.dst_aptr, p.dst_alen);
-  } else if (p.dst_rmab == 3) {
-   printf("   Byte: %x\n", p.dst_b);
-  } else {
-   printf("   Error: Invalid type\n");
-  }
-  printf("  Operator: %d\n", p.op);
-  {
-   char *o[] = { "+", "-", "*", "/" };
-   printf("   %s\n", o[p.op]);
-  }
-  printf("  Source type: %d\n", p.src_rmab);
-  if (p.src_rmab == 0) {
-   printf("   Register: %d\n", p.src_r);
-  } else if (p.src_rmab == 1) {
-   printf("   Memory: %x\n", p.src_m);
-  } else if (p.src_rmab == 2) {
-   printf("   Array: %x,%d\n", p.src_aptr, p.src_alen);
-  } else if (p.src_rmab == 3) {
-   printf("   Byte: %x\n", p.src_b);
-  } else {
-   printf("   Error: Invalid type\n");
-  }
- } else if (p.instr == 3) {
-  printf(" Proc call:\n");
- } else if (p.instr == 4) {
-  printf(" Proc return:\n");
- } else if (p.instr == 5) {
-  printf(" External proc call:\n");
- } else {
-   printf(" Error: Invalid type\n");
- }
-}
+*/
 
 int main(void) {
-#ifdef CPI_RUN_TESTS
- int test_idx = 1;
- for (test_idx = 1; test_idx <= 5; ++test_idx) {
+#if defined CPI_RUN_TESTS
+ int test_idx;
+ for (test_idx = 0; test_idx <= 5; ++test_idx) {
   printf("\n===[test_idx %d]===\n", test_idx);
 
-  if (test_idx == 1) {
-   byte mem[1] = { 0 };
-   Parameters p = { .instr=0, };
-   write_instr(mem, p);
-   read_instr(mem, &p);
-   print_instr(p);
+  if (test_idx == 0) {
+   {
+    struct Rmab r = {
+     .rmab_tag = 0,
+     .rmab_r_reg = 1,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+   {
+    struct Rmab r = {
+     .rmab_tag = 0,
+     .rmab_r_reg = 255,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+   {
+    struct Rmab r = {
+     .rmab_tag = 1,
+     .rmab_m_mem = 0xDEADBEEF,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+   {
+    struct Rmab r = {
+     .rmab_tag = 2,
+     .rmab_a_ptr = 0xDEADBEEF,
+     .rmab_a_len = 0xEFBEADDE,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+   {
+    struct Rmab r = {
+     .rmab_tag = 3,
+     .rmab_b_byte = 0xAD,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+   {
+    struct Rmab r = {
+     .rmab_tag = 10,
+    };
+    print_rmab_bytes(r);
+    printf("\n");
+    print_rmab_human(r);
+    printf("\n");
+   }
+  } else if (test_idx == 1) {
+   {
+    struct Param p = { 
+     .param_instr=0, 
+    };
+    print_instr_bytes(p); 
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 1, 
+     .param_dst = { .rmab_tag = 0, .rmab_r_reg = 2 },
+     .param_src = { .rmab_tag = 0, .rmab_r_reg = 1 },
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 2, 
+     .param_dst = { .rmab_tag = 2, .rmab_a_ptr = 0x10001000, .rmab_a_len=0x20 },
+     .param_op = 1,
+     .param_src = { .rmab_tag = 0, .rmab_r_reg = 200 },
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 3, 
+     .param_dst = { .rmab_tag = 2, .rmab_a_ptr = 0x10001000, .rmab_a_len=0x20 },
+     .param_op = 1,
+     .param_src = { .rmab_tag = 0, .rmab_r_reg = 200 },
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 4, 
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 5, 
+     .param_src = { .rmab_tag = 3, .rmab_b_byte = 0x46 },
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
+   {
+    struct Param p = { 
+     .param_instr = 6, 
+    };
+    print_instr_bytes(p);
+    printf("\n");
+    print_instr_human(p);
+   }
   } else if (test_idx == 2) {
-   byte mem[10] = { 0 };
-   Parameters p = { 
-    .instr = 1, 
-    .dst_rmab = 0,
-    .dst_r = 2,
-    .src_rmab = 0,
-    .src_r = 3,
-   };
-   write_instr(mem, p);
-   read_instr(mem, &p);
-   print_instr(p);
   } else if (test_idx == 3) {
   } else if (test_idx == 4) {
-  } else if (test_idx == 5) {
   }
  }
 #else
