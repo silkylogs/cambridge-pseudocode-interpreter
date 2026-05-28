@@ -133,13 +133,14 @@ int read_rmab(byte *adr, struct Rmab *r) {
  return adr - start;
 }
 
-struct Param {
+typedef struct Instr Instr;
+struct Instr {
  byte param_instr;
  struct Rmab param_src, param_dst;
  byte param_op;
 };
 
-void print_instr_human(struct Param p) {
+void print_instr_human(Instr p) {
  if (p.param_instr == 0) {
   printf("ZTRAP");
  } else if (p.param_instr == 1) {
@@ -166,7 +167,7 @@ void print_instr_human(struct Param p) {
  printf("\n");
 }
 
-void print_instr_bytes(struct Param p) {
+void print_instr_bytes(Instr p) {
  if (p.param_instr > 5) { printf("!! "); return; }
  print_byte(p.param_instr);
  if (p.param_instr == 0) {
@@ -187,7 +188,7 @@ void print_instr_bytes(struct Param p) {
  } else printf("!! ");
 }
 
-int write_instr(byte *adr, struct Param p) {
+int write_instr(byte *adr, Instr p) {
  byte *start = adr;
  
  adr += write_byte(adr, p.param_instr);
@@ -216,7 +217,7 @@ int write_instr(byte *adr, struct Param p) {
  return adr - start;
 }
 
-int read_instr(byte *adr, struct Param *p) {
+int read_instr(byte *adr, Instr *p) {
  byte *start = adr;
  
  adr += read_byte(adr, &p->param_instr);
@@ -245,15 +246,16 @@ int read_instr(byte *adr, struct Param *p) {
  return adr - start;
 }
 
+#define GPR_COUNT 16
 typedef struct Vm Vm;
 struct Vm {
  byte *vm_mem;
- word vm_gpr[(unsigned)1 << 7]; // Whatever a byte can address
+ word vm_gpr[GPR_COUNT]; // Whatever a byte can address
 
  word vm_rip;
  word vm_rflags;
 
- void vm_exception_callback(Vm *, struct Param p);
+ void (*vm_exception_callback)(Vm *, Instr p, const char*);
 };
 
 void print_vm(Vm *v) {
@@ -262,32 +264,52 @@ void print_vm(Vm *v) {
  printf("\nVm { \n");
  printf("\tRIP = 0x%8.8x\n", v->vm_rip);
  printf("\tRFLAGS = 0x%8.8x\n", v->vm_rflags);
- for (i=0; i<(unsigned)1 << 7; ++i) printf("\tGPR %X = %8.8x\n", i, v->vm_gpr[i]);
+ for (i=0; i<GPR_COUNT; ++i) printf("\tGPR %X = %8.8x\n", i, v->vm_gpr[i]);
+ printf("\texception callback @ %p\n", (void*)v->vm_exception_callback);
  printf("}\n");
 }
 
-void vm_default_exception_callback(Vm *v, struct Param p, const char *msg) {
-   printf("\nException raised. \"%s\"\n", msg);
-   print_vm(v);
-   exit(1);
+void vm_default_exception_callback(Vm *v, Instr p, const char *msg) {
+ printf("\nException raised. \"%s\"\n", msg);
+ printf("\nProcessing instruction:\n");
+ print_instr_human(p);
+ printf("\nVm state:\n"); 
+ print_vm(v);
+ //exit(1);
 }
 
-void vm_exec_instr(Vm *v, struct Param p) {
- if (p->instr == 0) {
+void vm_exec_instr(Vm *v, Instr p) {
+ if (p.param_instr == 0) {
   v->vm_exception_callback(v, p, "Zero trap");
- } else if (p->instr == 1) {
-  if (p->dst_rmab == 3 && p->src_rmab == 2) {
-   v->vm_exception_callback(v, p, "Illegal instruction, assigning array to byte");
+ } else if (p.param_instr == 1) {
+  if (p.param_dst.rmab_tag == 3 && p.param_src.rmab_tag == 2) {
+   v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to byte literal.");
   }
- } else if (p->instr == 2) {
-  if (p->dst_rmab == 3 && p->src_rmab == 2) {
-   v->vm_exception_callback(v, p, "Illegal instruction, assigning array to byte");
+
+  if (p.dst.rmab_tag == 0) {
+   if (p.src.rmab_tag == 0) {
+    vm_gpr[p.dst.rmab_r_reg] = vm_gpr[p.src.rmab_r_reg];
+   } else if (p.src.rmab_tag == 1) {
+    word deref = vm_gpr[p.src.rmab_m_mem];
+    vm_gpr[p.dst.rmab_r_reg] = deref;
+   } else if (p.src.rmab_tag == 2) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to register.");
+   } else if (p.src.rmab_tag == 3) {
+    vm_gpr[p.dst.rmab_r_reg] = p.src.rmab_b_byte;
+   } else {
+    v->vm_exception_callback(v, p, "Illegal instruction. Object tag out of range.");
+   }
   }
- } else if (p->instr == 3) {
- } else if (p->instr == 4) {
- } else if (p->instr == 5) {
+
+ } else if (p.param_instr == 2) {
+  if (p.param_dst.rmab_tag == 3 && p.param_src.rmab_tag == 2) {
+   v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to byte literal.");
+  }
+ } else if (p.param_instr == 3) {
+ } else if (p.param_instr == 4) {
+ } else if (p.param_instr == 5) {
  } else {
-   v->vm_exception_callback(v, p);
+   v->vm_exception_callback(v, p, "Illegal instruction. Base out of range.");
  }
 }
 
@@ -360,7 +382,7 @@ int main(void) {
    }
   } else if (test_idx == 1) {
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr=0, 
     };
     print_instr_bytes(p); 
@@ -368,7 +390,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 1, 
      .param_dst = { .rmab_tag = 0, .rmab_r_reg = 2 },
      .param_src = { .rmab_tag = 0, .rmab_r_reg = 1 },
@@ -378,7 +400,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 2, 
      .param_dst = { .rmab_tag = 2, .rmab_a_ptr = 0x10001000, .rmab_a_len=0x20 },
      .param_op = 1,
@@ -389,7 +411,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 3, 
      .param_dst = { .rmab_tag = 2, .rmab_a_ptr = 0x10001000, .rmab_a_len=0x20 },
      .param_op = 1,
@@ -400,7 +422,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 4, 
     };
     print_instr_bytes(p);
@@ -408,7 +430,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 5, 
      .param_src = { .rmab_tag = 3, .rmab_b_byte = 0x46 },
     };
@@ -417,7 +439,7 @@ int main(void) {
     print_instr_human(p);
    }
    {
-    struct Param p = { 
+    Instr p = { 
      .param_instr = 6, 
     };
     print_instr_bytes(p);
