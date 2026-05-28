@@ -252,6 +252,8 @@ struct Vm {
 
  word vm_rip;
  word vm_rflags;
+
+ void vm_exception_callback(Vm *, struct Param p);
 };
 
 void print_vm(Vm *v) {
@@ -264,45 +266,29 @@ void print_vm(Vm *v) {
  printf("}\n");
 }
 
+void vm_default_exception_callback(Vm *v, struct Param p, const char *msg) {
+   printf("\nException raised. \"%s\"\n", msg);
+   print_vm(v);
+   exit(1);
+}
+
 void vm_exec_instr(Vm *v, struct Param p) {
  if (p->instr == 0) {
-  printf("\nZero trap. Exiting.\n");
-  print_vm(v);
-  exit(0);
+  v->vm_exception_callback(v, p, "Zero trap");
  } else if (p->instr == 1) {
-  if (p->src_rmab == 3 && p->dst_rmab == 2) {
-   printf("\nIllegal instruction.\n");
-   print_vm(v);
-   exit(1);
+  if (p->dst_rmab == 3 && p->src_rmab == 2) {
+   v->vm_exception_callback(v, p, "Illegal instruction, assigning array to byte");
   }
-  vm_assign_rmab(vm, &p->dst_rmab, p->src_rmab);
  } else if (p->instr == 2) {
-  struct Rmab temp = {0};
-  if (p->src_rmab == 3 && p->dst_rmab == 2) {
-   printf("\nIllegal instruction.\n");
-   print_vm(v);
-   exit(1);
+  if (p->dst_rmab == 3 && p->src_rmab == 2) {
+   v->vm_exception_callback(v, p, "Illegal instruction, assigning array to byte");
   }
-  vm_arithmetic(vm, &temp, 
-  vm_assign_rmab(vm, &p->dst_rmab, p->src_rmab);
  } else if (p->instr == 3) {
-  if (p->src_rmab == 3) {
-   printf("\nIllegal instruction.\n");
-   print_vm(v);
-   exit(1);
-  }
-  sz += read_src_rmab(adr + sz, p);
-  return sz;
  } else if (p->instr == 4) {
-  return sz;
  } else if (p->instr == 5) {
-  if (p->src_rmab == 3) return INVALID;
-  sz += read_src_rmab(adr + sz, p);
-  return sz;
  } else {
-  return INVALID;
+   v->vm_exception_callback(v, p);
  }
- return sz;
 }
 
 int main(void) {
