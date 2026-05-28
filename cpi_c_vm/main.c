@@ -261,19 +261,19 @@ struct Vm {
 void print_vm(Vm *v) {
  int i = 0;
 
- printf("\nVm { \n");
+ printf("Vm { \n");
  printf("\tRIP = 0x%8.8x\n", v->vm_rip);
  printf("\tRFLAGS = 0x%8.8x\n", v->vm_rflags);
- for (i=0; i<GPR_COUNT; ++i) printf("\tGPR %X = %8.8x\n", i, v->vm_gpr[i]);
- printf("\texception callback @ %p\n", (void*)v->vm_exception_callback);
+ for (i=0; i<GPR_COUNT; ++i) printf("\tGPR %2.2X = 0x%8.8x\n", i, v->vm_gpr[i]);
+ printf("\tHost exception callback @ 0x%p\n", (void*)v->vm_exception_callback);
  printf("}\n");
 }
 
 void vm_default_exception_callback(Vm *v, Instr p, const char *msg) {
- printf("\nException raised. \"%s\"\n", msg);
- printf("\nProcessing instruction:\n");
+ printf("\nException \"%s\" raised while processing instruction:\n", msg);
+ print_instr_bytes(p); 
  print_instr_human(p);
- printf("\nVm state:\n"); 
+ printf("Vm state:\n"); 
  print_vm(v);
  //exit(1);
 }
@@ -285,31 +285,79 @@ void vm_exec_instr(Vm *v, Instr p) {
   if (p.param_dst.rmab_tag == 3 && p.param_src.rmab_tag == 2) {
    v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to byte literal.");
   }
-
-  if (p.dst.rmab_tag == 0) {
-   if (p.src.rmab_tag == 0) {
-    vm_gpr[p.dst.rmab_r_reg] = vm_gpr[p.src.rmab_r_reg];
-   } else if (p.src.rmab_tag == 1) {
-    word deref = vm_gpr[p.src.rmab_m_mem];
-    vm_gpr[p.dst.rmab_r_reg] = deref;
-   } else if (p.src.rmab_tag == 2) {
+  if (p.param_dst.rmab_tag == 0) {
+   if (p.param_src.rmab_tag == 0) {
+    v->vm_gpr[p.param_dst.rmab_r_reg] = v->vm_gpr[p.param_src.rmab_r_reg];
+   } else if (p.param_src.rmab_tag == 1) {
+    word src;
+    byte *adr = &v->vm_mem[p.param_src.rmab_m_mem];
+    read_word(adr, &src);
+    v->vm_gpr[p.param_dst.rmab_r_reg] = src;
+   } else if (p.param_src.rmab_tag == 2) {
     v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to register.");
-   } else if (p.src.rmab_tag == 3) {
-    vm_gpr[p.dst.rmab_r_reg] = p.src.rmab_b_byte;
+   } else if (p.param_src.rmab_tag == 3) {
+    v->vm_gpr[p.param_dst.rmab_r_reg] = p.param_src.rmab_b_byte;
    } else {
-    v->vm_exception_callback(v, p, "Illegal instruction. Object tag out of range.");
+    v->vm_exception_callback(v, p, "Illegal instruction. Destination object tag out of range.");
    }
+  } else if (p.param_dst.rmab_tag == 1) {
+   if (p.param_src.rmab_tag == 0) {
+    word reg = v->vm_gpr[p.param_src.rmab_r_reg];
+    byte *dst = &v->vm_mem[p.param_dst.rmab_m_mem];
+    write_word(dst, reg);
+   } else if (p.param_src.rmab_tag == 1) {
+    word tmp;
+    byte *dst = &v->vm_mem[p.param_dst.rmab_m_mem];
+    byte *src = &v->vm_mem[p.param_src.rmab_m_mem];
+    read_word(src, &tmp);
+    write_word(dst, tmp);
+   } else if (p.param_src.rmab_tag == 2) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to memory address.");
+   } else if (p.param_src.rmab_tag == 3) {
+    byte *dst = &v->vm_mem[p.param_dst.rmab_m_mem];
+    write_byte(dst, p.param_src.rmab_b_byte);
+   } else {
+    v->vm_exception_callback(v, p, "Illegal instruction. Destination object tag out of range.");
+   }
+  } else if (p.param_dst.rmab_tag == 2) {
+   if (p.param_src.rmab_tag == 0) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 1) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 2) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 3) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else {
+    v->vm_exception_callback(v, p, "Illegal instruction. Destination object tag out of range.");
+   }
+  } else if (p.param_dst.rmab_tag == 3) {
+   if (p.param_src.rmab_tag == 0) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 1) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 2) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else if (p.param_src.rmab_tag == 3) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
+   } else {
+    v->vm_exception_callback(v, p, "Illegal instruction. Destination object tag out of range.");
+   }
+  } else {
+    v->vm_exception_callback(v, p, "Illegal instruction. Source object tag out of range.");
   }
-
  } else if (p.param_instr == 2) {
   if (p.param_dst.rmab_tag == 3 && p.param_src.rmab_tag == 2) {
    v->vm_exception_callback(v, p, "Illegal instruction. Assigning array to byte literal.");
   }
  } else if (p.param_instr == 3) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
  } else if (p.param_instr == 4) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
  } else if (p.param_instr == 5) {
+    v->vm_exception_callback(v, p, "Illegal instruction. Unimplemented.");
  } else {
-   v->vm_exception_callback(v, p, "Illegal instruction. Base out of range.");
+   v->vm_exception_callback(v, p, "Illegal instruction. Base instruction tag out of range.");
  }
 }
 
@@ -447,7 +495,49 @@ int main(void) {
     print_instr_human(p);
    }
   } else if (test_idx == 2) {
+   {
+    Vm v = { 0 };
+    byte mem[1] = { 0 };
+    Instr p = { 0 };
+
+    v.vm_mem = mem;
+    v.vm_exception_callback = vm_default_exception_callback;
+
+    read_instr(mem, &p);
+
+    print_instr_bytes(p); 
+    printf("\n");
+    print_instr_human(p);
+
+    printf("Before:\n");
+    print_vm(&v);
+    vm_exec_instr(&v, p);
+    printf("After:\n");
+    print_vm(&v);
+   }
   } else if (test_idx == 3) {
+   {
+    Vm v = { 0 };
+    byte mem[5] = { 1, 0, 12, 0, 15 };
+    Instr p = { 0 };
+
+    v.vm_mem = mem;
+    v.vm_exception_callback = vm_default_exception_callback;
+    v.vm_gpr[15] = 0x224488CC;
+    v.vm_gpr[12] = 0x44;
+
+    read_instr(mem, &p);
+
+    print_instr_bytes(p); 
+    printf("\n");
+    print_instr_human(p);
+
+    printf("Before:\n");
+    print_vm(&v);
+    vm_exec_instr(&v, p);
+    printf("After:\n");
+    print_vm(&v);
+   }
   } else if (test_idx == 4) {
   }
  }
