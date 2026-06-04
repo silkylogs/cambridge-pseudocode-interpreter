@@ -1,0 +1,1 @@
+start /b ..\InsurgencyServer.exe Buhriz?Scenario=Scenario_Tideway_Checkpoint_Security?Lighting=Day?MaxPlayers=2 -Port=27102 -QueryPort=27131 -log
